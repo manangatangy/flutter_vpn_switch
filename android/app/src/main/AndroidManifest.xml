@@ -16,6 +16,10 @@
         android:name="io.flutter.app.FlutterApplication"
         android:label="flutter_vpn_switch"
         android:icon="@mipmap/ic_launcher">
+        <!-- The map api key is used by lib/google_maps -->
+        <meta-data
+            android:name="com.google.android.geo.API_KEY"
+            android:value="AIzaSyBa3xJXr1R96AYWpQIk5FKLiHqnAS39QGA"/>
         <activity
             android:name=".MainActivity"
             android:launchMode="singleTop"
