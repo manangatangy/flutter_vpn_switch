@@ -6,6 +6,7 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 // I had to generate a new key following
 // https://developers.google.com/maps/documentation/android-sdk/signup
 // I tried to reuse the key from the flutter_catalog app (but failed).
+// https://developers.google.com/maps/documentation/android-sdk/start
 
 class MapPage extends StatefulWidget {
   @override
@@ -21,8 +22,11 @@ class _MapPageState extends State<MapPage> {
       child: GoogleMap(
           onMapCreated: (GoogleMapController controller) {},
           options: GoogleMapOptions(
-            mapType: MapType.terrain,
-          )
+            mapType: MapType.satellite,
+            cameraPosition: CameraPosition(
+              target: LatLng(37.4219999, -122.0862462),
+            ),
+          ),
       ),
     );
   }

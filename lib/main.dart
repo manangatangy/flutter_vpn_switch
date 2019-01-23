@@ -210,3 +210,35 @@ class VpnPage extends StatelessWidget {
     );
   }
 }
+
+// Using: https://flutter.io/docs/cookbook/networking/fetch-data  **this-is-good**
+// https://flutter.io/docs/cookbook/networking/background-parsing  **this-too**
+
+// and possibly https://stackoverflow.com/a/47075568/1402287
+// (How work with progress indicator in flutter)
+//and possible https://stackoverflow.com/questions/43550853/how-do-i-do-the-frosted-glass-effect-in-flutter
+// (How do I do the “frosted glass” effect in Flutter?)
+// which show https://gist.github.com/collinjackson/321ee23b25e409d8747b623c97afa1d5
+// This https://medium.com/flutter-community/exploring-google-maps-in-flutter-8a86d3783d24
+// shows how to animate the camera position for the maps, adding markers, zooming etc
+
+// this https://grokonez.com/flutter/flutter-http-client-example-listview-fetch-data-parse-json-background
+// is largely plagiarised from the cookbook, however it does have a small snippet of useful
+// information regarding setting timeouts
+
+// this https://medium.com/flutter-community/parsing-complex-json-in-flutter-747c46655f51
+// has details about parsing, and could be handy when I get to the list parsing
+// this https://medium.com/flutter-community/working-with-apis-in-flutter-8745968103e9
+// by the same author is long winded and style is poor, but content is ok (just takes
+// too much time to read all the fluff)
+
+// at some point I may want to do a custom loading indicator animation, and this
+// http://cogitas.net/custom-loading-animation-flutter/  could be handy
+
+// I think i need a splash screen
+// https://www.clounce.com/flutter/loading-screen-in-flutter
+// this https://medium.com/@diegoveloper/flutter-splash-screen-9f4e05542548
+// shows how to do it for android and ios
+// this https://stackoverflow.com/questions/43879103/adding-a-splash-screen-to-flutter-appse
+// also shows but part of it could be out of date.  The top rated answer seems in-of-date
+
