@@ -9,21 +9,11 @@ import 'package:http/http.dart' as http;
 void main() => runApp(MyApp());
 
 class MyApp extends StatelessWidget {
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'VPNSwitch',
       theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // Try running your application with "flutter run". You'll see the
-        // application has a blue toolbar. Then, without quitting the app, try
-        // changing the primarySwatch below to Colors.green and then invoke
-        // "hot reload" (press "r" in the console where you ran "flutter run",
-        // or simply save your changes to "hot reload" in a Flutter IDE).
-        // Notice that the counter didn't reset back to zero; the application
-        // is not restarted.
         primarySwatch: Colors.blue,
       ),
       home: Material(
@@ -33,7 +23,7 @@ class MyApp extends StatelessWidget {
   }
 }
 
-class VpnPage extends StatefulWidget {
+class VpnPage extends StatelessWidget {
 
   // The actual running or stopped state of the vpnswitcher is not tracked or recorded.
   // Instead, the status values; vpnActive, squidActive, and pingOk are held and shown
@@ -44,15 +34,60 @@ class VpnPage extends StatefulWidget {
   // currentLocation request.  This element will be shown only if the currentLocation value
   // is different from the vpnLocation or the vpnLocation is empty.
 
-//  final Future<GetLocationsResponse> getLocationsResponse;
-
-
   @override
-  VpnPageState createState() => VpnPageState();
+  Widget build(BuildContext context) {
+    return Stack(
+      children: <Widget>[
+        Container(
+          height: MediaQuery.of(context).size.height,
+          width: MediaQuery.of(context).size.width,
+          child: VpnMap(),
+        ),
+        Positioned(
+          top: 24.0,
+          left: 0.0,
+          right: 0.0,
+          child: LocationPanel(),
+        ),
+        Positioned(
+          bottom: 80.0,
+          left: 20.0,
+          child: BorderedButton(
+            label: 'Stop',
+            onTap: () {
+
+            },
+          ),
+        ),
+        Positioned(
+          bottom: 80.0,
+          right: 20.0,
+          child: BorderedButton(
+            label: 'Start',
+            onTap: () {
+
+            },
+          ),
+        ),
+
+        Positioned(
+          bottom: 0.0,
+          left: 0.0,
+          right: 0.0,
+          child: StatusPanel(),
+        ),
+      ],
+    );
+  }
+
 }
 
-class VpnPageState extends State<VpnPage> {
+class VpnMap extends StatefulWidget {
+  @override
+  _VpnMapState createState() => _VpnMapState();
+}
 
+class _VpnMapState extends State<VpnMap> {
   GetLocationsResponse getLocationsResponse;
   GoogleMapController mapController;
 
@@ -62,11 +97,6 @@ class VpnPageState extends State<VpnPage> {
     int count = 3;
     if (getLocationsResponse.resultCode == 'OK') {
       for (var location in getLocationsResponse.locations) {
-
-//        if (location != 'US_West' && location != 'US_East') {
-//          continue;
-//        }
-
         OsmLatLon osmLatLon = await requestGetOsmLatLon(location);
         print('geocoded: $location = ${osmLatLon.lat}, ${osmLatLon.lon}');
         mapController.animateCamera(
@@ -80,159 +110,62 @@ class VpnPageState extends State<VpnPage> {
           ),
         );
 
-
+        // temporary limit on markers
         if (count-- < 0) {
           break;
         }
       }
     }
-    mapController.onMarkerTapped.add((Marker marker) {
-
-    });
+    mapController.onMarkerTapped.add((Marker marker) { });
   }
-
-
-
-  /*
-        mapController.animateCamera(
-  CameraUpdate.zoomTo(5.0),
-);
-
-
-
-mapController.animateCamera(
-  CameraUpdate.newLatLngZoom(
-    LatLng(37.4219999, -122.0862462),
-    10.0, // Zoom factor
-  ),
-);
-
-         */
 
   @override
   Widget build(BuildContext context) {
-    return Stack(
-      children: <Widget>[
-        Container(
-          height: MediaQuery.of(context).size.height,
-          width: MediaQuery.of(context).size.width,
-          child: GoogleMap(
-            onMapCreated: (GoogleMapController controller) => mapCreated(controller),
-            options: GoogleMapOptions(
-              mapType: MapType.satellite,
-              cameraPosition: CameraPosition(
-                target: LatLng(37.4219999, -122.0862462),
-              ),
-            ),
-          ),
+    return GoogleMap(
+      onMapCreated: (GoogleMapController controller) => mapCreated(controller),
+      options: GoogleMapOptions(
+        mapType: MapType.satellite,
+        cameraPosition: CameraPosition(
+          target: LatLng(37.4219999, -122.0862462),
         ),
-        Positioned(
-          top: 24.0,
-          left: 0.0,
-          right: 0.0,
-          child: Container(
-            height: 70.0,
-            color: Color(0x88424242),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: <Widget>[
-                _locationTexts(
-                  true,
-                  'VPN Exit Location',
-                  'New York City',
-                ),
-                _locationTexts(
-                  true,
-                  'Pending Location',
-                  'New York City',
-                ),
-                Material(
-                  color: Colors.transparent,
-                  child: Ink.image(
-                    image: AssetImage("assets/refresh.png"),
-                    fit: BoxFit.cover,
-                    width: 60.0,
-                    child: InkWell(
-                      onTap: () {},
-                      child: null,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-        Positioned(
-          bottom: 80.0,
-          left: 20.0,
-          child: _borderButton('Stop', () {
-
-          }),
-        ),
-        Positioned(
-          bottom: 80.0,
-          right: 20.0,
-          child: _borderButton('Start', () {
-
-          }),
-        ),
-
-        Positioned(
-          bottom: 0.0,
-          left: 0.0,
-          right: 0.0,
-          child: Container(
-            height: 60.0,
-            color: Color(0x88424242),
-            child: Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: <Widget>[
-                  _status('VPN', true),
-                  _status('SQUID', false),
-                  _status('PING', false),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ],
+      ),
     );
   }
+}
 
-  Widget _borderButton(String text, GestureTapCallback onTap) {
+class LocationPanel extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
     return Container(
-      decoration: BoxDecoration(
-        shape: BoxShape.rectangle,
-        borderRadius: BorderRadius.all(
-          Radius.circular(12.0),
-        ),
-        border: Border.all(
-          color: Colors.black26,
-          style: BorderStyle.solid,
-          width: 2.0,
-        ),
-        color: Color(0x88424242),
-      ),
-      width: 80.0,
-      height: 40.0,
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: onTap,
-          child: Center(
-            child: Text(
-              text,
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 18.0,
+      height: 70.0,
+      color: Color(0x88424242),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          _locationTexts(
+            true,
+            'VPN Exit Location',
+            'New York City',
+          ),
+          _locationTexts(
+            true,
+            'Pending Location',
+            'New York City',
+          ),
+          Material(
+            color: Colors.transparent,
+            child: Ink.image(
+              image: AssetImage("assets/refresh.png"),
+              fit: BoxFit.cover,
+              width: 60.0,
+              child: InkWell(
+                onTap: () {},
+                child: null,
               ),
             ),
           ),
-        ),
+        ],
       ),
     );
   }
@@ -262,43 +195,142 @@ mapController.animateCamera(
       ),
     );
   }
+}
 
-  Widget _status(String textString, bool isOk) {
+class StatusPanel extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 60.0,
+      color: Color(0x88424242),
+      child: Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: <Widget>[
+            StatusIndicator(label: 'VPN', isOk: true),
+            StatusIndicator(label: 'SQUID', isOk: false),
+            StatusIndicator(label: 'PING', isOk: true),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class StatusIndicator extends StatefulWidget {
+  final String label;
+  final bool isOk;
+
+  StatusIndicator({
+    this.label,
+    this.isOk,
+  });
+
+  @override
+  _StatusIndicatorState createState() => _StatusIndicatorState();
+}
+
+class _StatusIndicatorState extends State<StatusIndicator> {
+  @override
+  Widget build(BuildContext context) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
-        _statusText(textString),
-        _statusIcon(isOk),
+        Text(
+          widget.label,
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 18.0,
+          ),
+        ),
+        Container(
+          width: 60.0,
+          color: Colors.transparent,
+          child: Image(
+            image: widget.isOk
+                ? AssetImage("assets/green_tick.png")
+                : AssetImage("assets/red_cross.png"),
+            fit: BoxFit.contain,
+          ),
+        ),
       ],
     );
   }
+}
 
-  Text _statusText(String textString) {
-    return Text(
-      textString,
-      style: TextStyle(
-        color: Colors.white,
-        fontSize: 18.0,
-      ),
-    );
-  }
+class BorderedButton extends StatefulWidget {
+  final String label;
+  final GestureTapCallback onTap;
 
-  Widget _statusIcon(bool isOk) {
-    return Container(
-      width: 60.0,
-      color: Colors.transparent,
-      child: Image(
-        image: isOk ? AssetImage("assets/green_tick.png") : AssetImage("assets/red_cross.png"),
-        fit: BoxFit.contain,
-      ),
-    );
-  }
+  BorderedButton({
+    this.label,
+    this.onTap,
+  });
 
   @override
-  void initState() {
+  BorderedButtonState createState() {
+    return new BorderedButtonState();
   }
-
 }
+
+class BorderedButtonState extends State<BorderedButton> {
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        shape: BoxShape.rectangle,
+        borderRadius: BorderRadius.all(
+          Radius.circular(12.0),
+        ),
+        border: Border.all(
+          color: Colors.black26,
+          style: BorderStyle.solid,
+          width: 2.0,
+        ),
+        color: Color(0x88424242),
+      ),
+      width: 80.0,
+      height: 40.0,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: widget.onTap,
+          child: Center(
+            child: Text(
+              widget.label,
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 18.0,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// Checkout https://github.com/filiph/state_experiments.git
+// for details about using streams/streambuilders
+
+  /*
+        mapController.animateCamera(
+  CameraUpdate.zoomTo(5.0),
+);
+
+
+
+mapController.animateCamera(
+  CameraUpdate.newLatLngZoom(
+    LatLng(37.4219999, -122.0862462),
+    10.0, // Zoom factor
+  ),
+);
+
+         */
+
 
 // Using: https://flutter.io/docs/cookbook/networking/fetch-data  **this-is-good**
 // https://flutter.io/docs/cookbook/networking/background-parsing  **this-too**
