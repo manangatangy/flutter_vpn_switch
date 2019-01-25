@@ -1,8 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_vpn_switch/osm.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:flutter_vpn_switch/map.dart';
+import 'package:flutter_vpn_switch/vpn_map.dart';
 import 'package:flutter_vpn_switch/responses.dart';
 import 'package:http/http.dart' as http;
 
@@ -80,57 +79,6 @@ class VpnPage extends StatelessWidget {
     );
   }
 
-}
-
-class VpnMap extends StatefulWidget {
-  @override
-  _VpnMapState createState() => _VpnMapState();
-}
-
-class _VpnMapState extends State<VpnMap> {
-  GetLocationsResponse getLocationsResponse;
-  GoogleMapController mapController;
-
-  mapCreated(GoogleMapController controller) async {
-    mapController = controller;
-    getLocationsResponse = await requestGetLocationsResponse();
-    int count = 3;
-    if (getLocationsResponse.resultCode == 'OK') {
-      for (var location in getLocationsResponse.locations) {
-        OsmLatLon osmLatLon = await requestGetOsmLatLon(location);
-        print('geocoded: $location = ${osmLatLon.lat}, ${osmLatLon.lon}');
-        mapController.animateCamera(
-          CameraUpdate.newLatLng(LatLng(osmLatLon.lat, osmLatLon.lon)),
-        );
-        mapController.addMarker(
-          MarkerOptions(
-            position: LatLng(osmLatLon.lat, osmLatLon.lon),
-            infoWindowText: InfoWindowText(location, null),
-//            icon: BitmapDescriptor.fromAsset('images/flutter.png',),
-          ),
-        );
-
-        // temporary limit on markers
-        if (count-- < 0) {
-          break;
-        }
-      }
-    }
-    mapController.onMarkerTapped.add((Marker marker) { });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return GoogleMap(
-      onMapCreated: (GoogleMapController controller) => mapCreated(controller),
-      options: GoogleMapOptions(
-        mapType: MapType.satellite,
-        cameraPosition: CameraPosition(
-          target: LatLng(37.4219999, -122.0862462),
-        ),
-      ),
-    );
-  }
 }
 
 class LocationPanel extends StatelessWidget {

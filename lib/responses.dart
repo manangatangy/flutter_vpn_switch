@@ -3,6 +3,49 @@ import 'dart:convert';
 
 import 'package:http/http.dart' as http;
 
+Future<OsmLatLon> requestGetOsmLatLon(String location) async {
+  // Ref: https://wiki.openstreetmap.org/wiki/Nominatim
+  // eg. https://nominatim.openstreetmap.org/search?q=US\%20East\%20Coast&format=json&limit=1
+
+  if (location == 'US_West' || location == 'US_East') {
+    location = location + '_Coast';
+  }
+  var req = 'https://nominatim.openstreetmap.org/search?q=' +
+      location.replaceAll('_', '\\%20') + '&format=json&limit=1';
+
+//  print('requesting: $req');
+  final response = await http.get(req);
+
+  if (response.statusCode == 200) {
+//    String body = response.body;
+//    print('response.body: $body');
+//    dynamic decoded = json.decode(response.body);
+//    print('decoded-type: ${decoded.runtimeType}');
+
+    return OsmLatLon.fromJson(json.decode(response.body)[0]);
+  } else {
+    throw Exception('Failed to requestGetOsmLatLon: ' + location);
+  }
+}
+
+class OsmLatLon {
+  final double lat;
+  final double lon;
+
+  OsmLatLon({
+    this.lat,
+    this.lon,
+  });
+
+  factory OsmLatLon.fromJson(Map<String, dynamic> parsedJson) {
+    var latLon = OsmLatLon(
+      lat: double.parse(parsedJson['lat']),
+      lon: double.parse(parsedJson['lon']),
+    );
+    return latLon;
+  }
+}
+
 Future<GetLocationsResponse> requestGetLocationsResponse() async {
   final response = await http.get('http://10.57.129.233:8080/vpns/locations');
 
