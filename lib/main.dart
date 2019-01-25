@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:flutter_vpn_switch/osm.dart';
 import 'package:flutter_vpn_switch/vpn_map.dart';
 import 'package:flutter_vpn_switch/responses.dart';
 import 'package:http/http.dart' as http;
