@@ -1,4 +1,5 @@
 import 'package:flutter/widgets.dart';
+import 'package:flutter_vpn_switch/bloc.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:flutter_vpn_switch/responses.dart';
 
@@ -19,8 +20,8 @@ class _VpnMapState extends State<VpnMap> {
 
   mapCreated(GoogleMapController controller) async {
     mapController = controller;
-    GetLocationsResponse getLocationsResponse = await requestGetLocationsResponse();
-    int count = 1;
+    GetLocationsResponse getLocationsResponse = await requestGetLocations();
+    int count = 2;
     if (getLocationsResponse.resultCode == 'OK') {
       for (var location in getLocationsResponse.locations) {
         // temporary limit on markers
@@ -43,7 +44,10 @@ class _VpnMapState extends State<VpnMap> {
 
       }
     }
-    mapController.onMarkerTapped.add((Marker marker) { });
+    mapController.onMarkerTapped.add((Marker marker) {
+      final vpnBloc = VpnBlocProvider.of(context);
+      vpnBloc.switchLocation(marker.options.infoWindowText.title);
+    });
 
   }
 

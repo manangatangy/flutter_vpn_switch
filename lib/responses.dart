@@ -50,15 +50,14 @@ final homeBaseUrl = 'http://192.168.0.10:8080/vpns/';    // at home
 final workBaseUrl = 'http://10.57.129.233:8080/vpns/';    // at work
 final baseUrl = homeBaseUrl;
 
-Future<GetLocationsResponse> requestGetLocationsResponse() async {
+Future<GetLocationsResponse> requestGetLocations() async {
   final response = await http.get(baseUrl + 'locations');
 
   if (response.statusCode == 200) {
     GetLocationsResponse getLocations = GetLocationsResponse.fromJson(json.decode(response.body));
     return getLocations;
   } else {
-    // If that call was not successful, throw an error.
-    throw Exception('Failed to requestGetLocationsResponse');
+    throw Exception('Failed to requestGetLocations');
   }
 }
 
@@ -69,7 +68,6 @@ class GetLocationsResponse {
   GetLocationsResponse({this.resultCode, this.locations});
 
   factory GetLocationsResponse.fromJson(Map<String, dynamic> parsedJson) {
-//    print('parsedJson: $parsedJson');
     var locationsFromJson = parsedJson['locations'];
     List<String> locations = new List<String>.from(locationsFromJson);
     var response = GetLocationsResponse(
@@ -81,42 +79,13 @@ class GetLocationsResponse {
   }
 }
 
-Future<GetCurrentResponse> requestGetCurrentResponse() async {
-  final response = await http.get(baseUrl + 'current');
-
-  if (response.statusCode == 200) {
-    // If the call to the server was successful, parse the JSON
-    return GetCurrentResponse.fromJson(json.decode(response.body));
-  } else {
-    // If that call was not successful, throw an error.
-    throw Exception('Failed to requestGetCurrentResponse');
-  }
-}
-
-class GetCurrentResponse {
-  final String resultCode;
-  final String current;
-
-  GetCurrentResponse({this.resultCode, this.current});
-
-  factory GetCurrentResponse.fromJson(Map<String, dynamic> parsedJson) {
-    return GetCurrentResponse(
-      resultCode: parsedJson['resultCode'],
-      current: parsedJson['current'],
-    );
-  }
-}
-
-Future<GetStatusResponse> requestGetStatusResponse() async {
+Future<GetStatusResponse> requestGetStatus() async {
   final response = await http.get(baseUrl + 'status');
 
-  if (response.statusCode == 200) {
-    // If the call to the server was successful, parse the JSON
-    return GetStatusResponse.fromJson(json.decode(response.body));
-  } else {
-    // If that call was not successful, throw an error.
-    throw Exception('Failed to requestGetStatusResponse');
+  if (response.statusCode != 200) {
+    throw Exception('Failed to requestGetStatus');
   }
+  return GetStatusResponse.fromJson(json.decode(response.body));
 }
 
 class GetStatusResponse {
@@ -136,6 +105,78 @@ class GetStatusResponse {
     );
   }
 }
+
+Future<GetPingResponse> requestGetPing() async {
+  final response = await http.get(baseUrl + 'ping/www.google.com');
+
+  if (response.statusCode != 200) {
+    throw Exception('Failed to requestGetPing');
+  }
+  return GetPingResponse.fromJson(json.decode(response.body));
+}
+
+class GetPingResponse {
+  final String resultCode;
+  final String target;
+
+  GetPingResponse({this.resultCode, this.target});
+
+  factory GetPingResponse.fromJson(Map<String, dynamic> parsedJson) {
+    return GetPingResponse(
+      resultCode: parsedJson['resultCode'],
+      target: parsedJson['target'],
+    );
+  }
+}
+
+Future<GetCurrentResponse> requestGetCurrent() async {
+  final response = await http.get(baseUrl + 'current');
+
+  if (response.statusCode != 200) {
+    throw Exception('Failed to requestGetCurrent');
+  }
+  return GetCurrentResponse.fromJson(json.decode(response.body));
+}
+
+class GetCurrentResponse {
+  final String resultCode;
+  final String current;
+
+  GetCurrentResponse({this.resultCode, this.current});
+
+  factory GetCurrentResponse.fromJson(Map<String, dynamic> parsedJson) {
+    return GetCurrentResponse(
+      resultCode: parsedJson['resultCode'],
+      current: parsedJson['current'],
+    );
+  }
+}
+
+Future<PostSwitchResponse> requestPostSwitch(String newLocation) async {
+  final response = await http.post(baseUrl + 'switch/' + newLocation);
+
+  if (response.statusCode != 200) {
+    throw Exception('Failed to requestPostSwitch');
+  }
+  return PostSwitchResponse.fromJson(json.decode(response.body));
+}
+
+class PostSwitchResponse {
+  final String resultCode;
+  final String oldLocation;
+  final String newLocation;
+
+  PostSwitchResponse({this.resultCode, this.oldLocation, this.newLocation});
+
+  factory PostSwitchResponse.fromJson(Map<String, dynamic> parsedJson) {
+    return PostSwitchResponse(
+      resultCode: parsedJson['resultCode'],
+      oldLocation: parsedJson['oldLocation'],
+      newLocation: parsedJson['newLocation'],
+    );
+  }
+}
+
 
 /*
     router.HandleFunc("/vpns/current", GetCurrent).Methods("GET")

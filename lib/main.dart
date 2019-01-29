@@ -1,9 +1,6 @@
-import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_vpn_switch/bloc.dart';
 import 'package:flutter_vpn_switch/map.dart';
-import 'package:flutter_vpn_switch/responses.dart';
-import 'package:http/http.dart' as http;
 
 void main() => runApp(MyApp());
 
@@ -80,7 +77,6 @@ class VpnPage extends StatelessWidget {
       ],
     );
   }
-
 }
 
 class LocationPanel extends StatelessWidget {
@@ -88,60 +84,91 @@ class LocationPanel extends StatelessWidget {
   Widget build(BuildContext context) {
     final vpnBloc = VpnBlocProvider.of(context);
     return Container(
-      height: 70.0,
+      height: 60.0,
       color: Color(0x88424242),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: <Widget>[
-          _locationTexts(
-            true,
-            'VPN Exit Location',
-            'New York City',
-          ),
-          _locationTexts(
-            true,
-            'Pending Location',
-            'New York City',
-          ),
-          Material(
-            color: Colors.transparent,
-            child: Ink.image(
-              image: AssetImage("assets/refresh.png"),
-              fit: BoxFit.cover,
-              width: 60.0,
-              child: InkWell(
-                onTap: () {
-                  vpnBloc.refresh();
-                },
-                child: null,
+      child: StreamBuilder<LocationsData>(
+        stream: vpnBloc.locationsDataStream,
+        initialData: LocationsData(),
+        builder: (context, snapshot) => Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: <Widget>[
+            Expanded(
+              flex: 1,
+              child: _locationTexts(
+                true,
+                false,
+                'VPN Exit Location',
+                snapshot.data.actualLocation,
               ),
             ),
-          ),
-        ],
+            Expanded(
+              flex: 1,
+              child: _locationTexts(
+                snapshot.data.doShowPending,
+                snapshot.data.pendingIsLoading,
+                'Pending Location',
+                snapshot.data.pendingLocation,
+              ),
+            ),
+            Material(
+              color: Colors.transparent,
+              child: Ink.image(
+                image: AssetImage("assets/refresh.png"),
+                fit: BoxFit.cover,
+                width: 60.0,
+                child: InkWell(
+                  onTap: () {
+                    vpnBloc.refresh();
+                  },
+                  child: null,
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
 
-  Widget _locationTexts(bool doShow, String locationLabel, String locationText) {
+  Widget _locationTexts(bool doShow, bool showLoading, String locationLabel, String locationText) {
+    Widget data;
+    if (showLoading) {
+      data = Align(
+        alignment: Alignment.centerLeft,
+        child: Container(
+          width: 100.0,
+          child: LinearProgressIndicator(),
+        )
+      );
+    } else {
+      data = Text(
+        locationText,
+        style: TextStyle(
+          color: Colors.white,
+          fontSize: 24.0,
+        ),
+      );
+    }
     return Padding(
       padding: const EdgeInsets.all(8.0),
       child: !doShow ? Column() : Column(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
-          Text(
-            locationLabel,
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 14.0,
+          Expanded(
+            flex: 1,
+            child: Text(
+              locationLabel,
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 14.0,
+              ),
             ),
           ),
-          Text(
-            locationText,
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 24.0,
+          Expanded(
+            flex: 2,
+            child: Container(
+              child: data,
             ),
           ),
         ],
@@ -149,19 +176,6 @@ class LocationPanel extends StatelessWidget {
     );
   }
 }
-
-/*
-StreamBuilder<int>(
-            stream: cartBloc.itemCount,
-            initialData: 0,
-            builder: (context, snapshot) => CartButton(
-                  itemCount: snapshot.data,
-                  onPressed: () {
-                    Navigator.of(context).pushNamed(BlocCartPage.routeName);
-                  },
-                ),
-          )
- */
 
 class StatusPanel extends StatelessWidget {
   @override
