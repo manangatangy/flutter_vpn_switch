@@ -46,8 +46,12 @@ class OsmLatLon {
   }
 }
 
+final homeBaseUrl = 'http://192.168.0.10:8080/vpns/';    // at home
+final workBaseUrl = 'http://10.57.129.233:8080/vpns/';    // at work
+final baseUrl = homeBaseUrl;
+
 Future<GetLocationsResponse> requestGetLocationsResponse() async {
-  final response = await http.get('http://10.57.129.233:8080/vpns/locations');
+  final response = await http.get(baseUrl + 'locations');
 
   if (response.statusCode == 200) {
     GetLocationsResponse getLocations = GetLocationsResponse.fromJson(json.decode(response.body));
@@ -78,7 +82,7 @@ class GetLocationsResponse {
 }
 
 Future<GetCurrentResponse> requestGetCurrentResponse() async {
-  final response = await http.get('http://10.57.129.233/vpns/current');
+  final response = await http.get(baseUrl + 'current');
 
   if (response.statusCode == 200) {
     // If the call to the server was successful, parse the JSON
@@ -103,6 +107,35 @@ class GetCurrentResponse {
   }
 }
 
+Future<GetStatusResponse> requestGetStatusResponse() async {
+  final response = await http.get(baseUrl + 'status');
+
+  if (response.statusCode == 200) {
+    // If the call to the server was successful, parse the JSON
+    return GetStatusResponse.fromJson(json.decode(response.body));
+  } else {
+    // If that call was not successful, throw an error.
+    throw Exception('Failed to requestGetStatusResponse');
+  }
+}
+
+class GetStatusResponse {
+  final String resultCode;
+  final bool squidActive;
+  final bool vpnActive;
+  final String vpnLocation;
+
+  GetStatusResponse({this.resultCode, this.squidActive, this.vpnActive, this.vpnLocation});
+
+  factory GetStatusResponse.fromJson(Map<String, dynamic> parsedJson) {
+    return GetStatusResponse(
+      resultCode: parsedJson['resultCode'],
+      squidActive: parsedJson['squidActive'],
+      vpnActive: parsedJson['vpnActive'],
+      vpnLocation: parsedJson['vpnLocation'],
+    );
+  }
+}
 
 /*
     router.HandleFunc("/vpns/current", GetCurrent).Methods("GET")

@@ -15,15 +15,19 @@ class VpnMap extends StatefulWidget {
 }
 
 class _VpnMapState extends State<VpnMap> {
-  GetLocationsResponse getLocationsResponse;
   GoogleMapController mapController;
 
   mapCreated(GoogleMapController controller) async {
     mapController = controller;
-    getLocationsResponse = await requestGetLocationsResponse();
-    int count = 3;
+    GetLocationsResponse getLocationsResponse = await requestGetLocationsResponse();
+    int count = 1;
     if (getLocationsResponse.resultCode == 'OK') {
       for (var location in getLocationsResponse.locations) {
+        // temporary limit on markers
+        if (--count < 0) {
+          break;
+        }
+
         OsmLatLon osmLatLon = await requestGetOsmLatLon(location);
         print('geocoded: $location = ${osmLatLon.lat}, ${osmLatLon.lon}');
         mapController.animateCamera(
@@ -37,13 +41,10 @@ class _VpnMapState extends State<VpnMap> {
           ),
         );
 
-        // temporary limit on markers
-        if (count-- < 0) {
-          break;
-        }
       }
     }
     mapController.onMarkerTapped.add((Marker marker) { });
+
   }
 
   @override

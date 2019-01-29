@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:flutter_vpn_switch/vpn_map.dart';
+import 'package:flutter_vpn_switch/bloc.dart';
+import 'package:flutter_vpn_switch/map.dart';
 import 'package:flutter_vpn_switch/responses.dart';
 import 'package:http/http.dart' as http;
 
@@ -9,13 +10,15 @@ void main() => runApp(MyApp());
 class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'VPNSwitch',
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-      ),
-      home: Material(
-          child: VpnPage(),
+    return VpnBlocProvider(
+      child: MaterialApp(
+        title: 'VPNSwitch',
+        theme: ThemeData(
+          primarySwatch: Colors.blue,
+        ),
+        home: Material(
+            child: VpnPage(),
+        ),
       ),
     );
   }
@@ -83,6 +86,7 @@ class VpnPage extends StatelessWidget {
 class LocationPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    final vpnBloc = VpnBlocProvider.of(context);
     return Container(
       height: 70.0,
       color: Color(0x88424242),
@@ -107,7 +111,9 @@ class LocationPanel extends StatelessWidget {
               fit: BoxFit.cover,
               width: 60.0,
               child: InkWell(
-                onTap: () {},
+                onTap: () {
+                  vpnBloc.refresh();
+                },
                 child: null,
               ),
             ),
@@ -144,22 +150,40 @@ class LocationPanel extends StatelessWidget {
   }
 }
 
+/*
+StreamBuilder<int>(
+            stream: cartBloc.itemCount,
+            initialData: 0,
+            builder: (context, snapshot) => CartButton(
+                  itemCount: snapshot.data,
+                  onPressed: () {
+                    Navigator.of(context).pushNamed(BlocCartPage.routeName);
+                  },
+                ),
+          )
+ */
+
 class StatusPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    final vpnBloc = VpnBlocProvider.of(context);
     return Container(
       height: 60.0,
       color: Color(0x88424242),
       child: Padding(
         padding: const EdgeInsets.all(8.0),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: <Widget>[
-            StatusIndicator(label: 'VPN', isOk: true),
-            StatusIndicator(label: 'SQUID', isOk: false),
-            StatusIndicator(label: 'PING', isOk: true),
-          ],
+        child: StreamBuilder<StatusData>(
+          stream: vpnBloc.statusDataStream,
+          initialData: StatusData(),
+          builder: (context, snapshot) => Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: <Widget>[
+              StatusIndicator(label: 'VPN', status: snapshot.data.vpnStatus),
+              StatusIndicator(label: 'SQUID', status: snapshot.data.squidStatus),
+              StatusIndicator(label: 'PING', status: snapshot.data.pingStatus),
+            ],
+          ),
         ),
       ),
     );
@@ -168,11 +192,11 @@ class StatusPanel extends StatelessWidget {
 
 class StatusIndicator extends StatefulWidget {
   final String label;
-  final bool isOk;
+  final Status status;
 
   StatusIndicator({
     this.label,
-    this.isOk,
+    this.status,
   });
 
   @override
@@ -182,6 +206,34 @@ class StatusIndicator extends StatefulWidget {
 class _StatusIndicatorState extends State<StatusIndicator> {
   @override
   Widget build(BuildContext context) {
+    Widget image;
+    String asset;
+    switch (widget.status) {
+      case Status.unknown:
+        asset = 'assets/yellow_question.png';
+        break;
+      case Status.ok:
+        asset = 'assets/green_tick.png';
+        break;
+      case Status.nbg:
+        asset = 'assets/red_cross.png';
+        break;
+      case Status.loading:
+        image = Container(
+          width: 40.0,
+          child: Center(
+            child: CircularProgressIndicator(),
+          ),
+        );
+        break;
+    }
+    if (asset != null) {
+      image = Image(
+        image: AssetImage(asset),
+        fit: BoxFit.contain,
+      );
+    }
+
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
@@ -195,12 +247,7 @@ class _StatusIndicatorState extends State<StatusIndicator> {
         Container(
           width: 60.0,
           color: Colors.transparent,
-          child: Image(
-            image: widget.isOk
-                ? AssetImage("assets/green_tick.png")
-                : AssetImage("assets/red_cross.png"),
-            fit: BoxFit.contain,
-          ),
+          child: image,
         ),
       ],
     );
