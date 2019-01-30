@@ -3,7 +3,7 @@ import 'dart:convert';
 
 import 'package:http/http.dart' as http;
 
-Future<OsmLatLon> requestGetOsmLatLon(String location) async {
+Future<OsmLatLon> getOsmLatLon(String location) async {
   // Ref: https://wiki.openstreetmap.org/wiki/Nominatim
   // eg. https://nominatim.openstreetmap.org/search?q=US\%20East\%20Coast&format=json&limit=1
 
@@ -16,16 +16,15 @@ Future<OsmLatLon> requestGetOsmLatLon(String location) async {
 //  print('requesting: $req');
   final response = await http.get(req);
 
-  if (response.statusCode == 200) {
+  if (response.statusCode != 200) {
+    throw Exception('Failed to getOsmLatLon: ' + location);
+  }
 //    String body = response.body;
 //    print('response.body: $body');
 //    dynamic decoded = json.decode(response.body);
 //    print('decoded-type: ${decoded.runtimeType}');
 
-    return OsmLatLon.fromJson(json.decode(response.body)[0]);
-  } else {
-    throw Exception('Failed to requestGetOsmLatLon: ' + location);
-  }
+  return OsmLatLon.fromJson(json.decode(response.body)[0]);
 }
 
 class OsmLatLon {
@@ -50,15 +49,13 @@ final homeBaseUrl = 'http://192.168.0.10:8080/vpns/';    // at home
 final workBaseUrl = 'http://10.57.129.233:8080/vpns/';    // at work
 final baseUrl = homeBaseUrl;
 
-Future<GetLocationsResponse> requestGetLocations() async {
+Future<GetLocationsResponse> getLocations() async {
   final response = await http.get(baseUrl + 'locations');
 
-  if (response.statusCode == 200) {
-    GetLocationsResponse getLocations = GetLocationsResponse.fromJson(json.decode(response.body));
-    return getLocations;
-  } else {
-    throw Exception('Failed to requestGetLocations');
+  if (response.statusCode != 200) {
+    throw Exception('Failed to getLocations');
   }
+  return GetLocationsResponse.fromJson(json.decode(response.body));
 }
 
 class GetLocationsResponse {
@@ -79,11 +76,11 @@ class GetLocationsResponse {
   }
 }
 
-Future<GetStatusResponse> requestGetStatus() async {
+Future<GetStatusResponse> getStatus() async {
   final response = await http.get(baseUrl + 'status');
 
   if (response.statusCode != 200) {
-    throw Exception('Failed to requestGetStatus');
+    throw Exception('Failed to getStatus');
   }
   return GetStatusResponse.fromJson(json.decode(response.body));
 }
@@ -106,11 +103,11 @@ class GetStatusResponse {
   }
 }
 
-Future<GetPingResponse> requestGetPing() async {
+Future<GetPingResponse> getPing() async {
   final response = await http.get(baseUrl + 'ping/www.google.com');
 
   if (response.statusCode != 200) {
-    throw Exception('Failed to requestGetPing');
+    throw Exception('Failed to getPing');
   }
   return GetPingResponse.fromJson(json.decode(response.body));
 }
@@ -129,61 +126,59 @@ class GetPingResponse {
   }
 }
 
-Future<GetCurrentResponse> requestGetCurrent() async {
+Future<GetPendingResponse> getPending() async {
   final response = await http.get(baseUrl + 'current');
 
   if (response.statusCode != 200) {
-    throw Exception('Failed to requestGetCurrent');
+    throw Exception('Failed to getPending');
   }
-  return GetCurrentResponse.fromJson(json.decode(response.body));
+  return GetPendingResponse.fromJson(json.decode(response.body));
 }
 
-// TODO change the current to pending
-class GetCurrentResponse {
+class GetPendingResponse {
   final String resultCode;
-  final String current;
+  final String pending;
 
-  GetCurrentResponse({this.resultCode, this.current});
+  GetPendingResponse({this.resultCode, this.pending});
 
-  factory GetCurrentResponse.fromJson(Map<String, dynamic> parsedJson) {
-    return GetCurrentResponse(
+  factory GetPendingResponse.fromJson(Map<String, dynamic> parsedJson) {
+    return GetPendingResponse(
       resultCode: parsedJson['resultCode'],
-      current: parsedJson['current'],
+      pending: parsedJson['current'],
     );
   }
 }
 
-//TODO make clear that this is a switch to the pending location
-Future<PostSwitchResponse> requestPostSwitch(String newLocation) async {
-  final response = await http.post(baseUrl + 'switch/' + newLocation);
+Future<PostSwitchPendingResponse> postSwitchPending(String pendingLocation) async {
+  final response = await http.post(baseUrl + 'switch/' + pendingLocation);
 
   if (response.statusCode != 200) {
-    throw Exception('Failed to requestPostSwitch');
+    throw Exception('Failed to postSwitchPending');
   }
-  return PostSwitchResponse.fromJson(json.decode(response.body));
+  return PostSwitchPendingResponse.fromJson(json.decode(response.body));
 }
 
-class PostSwitchResponse {
+class PostSwitchPendingResponse {
   final String resultCode;
-  final String oldLocation;
-  final String newLocation;
+  final String oldPendingLocation;
+  final String newPendingLocation;
 
-  PostSwitchResponse({this.resultCode, this.oldLocation, this.newLocation});
+  PostSwitchPendingResponse({this.resultCode, this.oldPendingLocation, this.newPendingLocation});
 
-  factory PostSwitchResponse.fromJson(Map<String, dynamic> parsedJson) {
-    return PostSwitchResponse(
+  factory PostSwitchPendingResponse.fromJson(Map<String, dynamic> parsedJson) {
+    return PostSwitchPendingResponse(
       resultCode: parsedJson['resultCode'],
-      oldLocation: parsedJson['oldLocation'],
-      newLocation: parsedJson['newLocation'],
+      oldPendingLocation: parsedJson['oldLocation'],
+      newPendingLocation: parsedJson['newLocation'],
     );
   }
 }
 
-Future<PostStartStopResponse> requestStartStop(bool doStart) async {
+Future<PostStartStopResponse> postStartStop(bool doStart) async {
   final response = await http.post(baseUrl + (doStart ? 'start' : 'stop'));
 
   if (response.statusCode != 200) {
-    throw Exception('Failed to requestStartStop');
+    throw Exception('Failed to postStartStop');
   }
   return PostStartStopResponse.fromJson(json.decode(response.body));
 }

@@ -20,7 +20,7 @@ class _VpnMapState extends State<VpnMap> {
 
   mapCreated(GoogleMapController controller) async {
     mapController = controller;
-    GetLocationsResponse getLocationsResponse = await requestGetLocations();
+    GetLocationsResponse getLocationsResponse = await getLocations();
     int count = 2;
     if (getLocationsResponse.resultCode == 'OK') {
       for (var location in getLocationsResponse.locations) {
@@ -29,7 +29,7 @@ class _VpnMapState extends State<VpnMap> {
           break;
         }
 
-        OsmLatLon osmLatLon = await requestGetOsmLatLon(location);
+        OsmLatLon osmLatLon = await getOsmLatLon(location);
         print('geocoded: $location = ${osmLatLon.lat}, ${osmLatLon.lon}');
         mapController.animateCamera(
           CameraUpdate.newLatLng(LatLng(osmLatLon.lat, osmLatLon.lon)),

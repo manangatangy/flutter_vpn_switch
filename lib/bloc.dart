@@ -126,7 +126,7 @@ class VpnBloc {
     _statusData.squidStatus = Status.loading;
     _statusDataSubject.add(StatusData.copy(_statusData));
 
-    requestGetStatus().then((response) {
+    getStatus().then((response) {
       // Don't update pingStatus; it hasn't changed.
       _statusData.vpnStatus = response.vpnActive ? Status.ok : Status.nbg;
       _statusData.squidStatus = response.squidActive ? Status.ok : Status.nbg;
@@ -137,15 +137,14 @@ class VpnBloc {
 
       // It's may be possible to make this call inside refresh() however
       // I'm not convinced the vpn-server will be ok with that.
-      fetchCurrent();
+      fetchPending();
     });
   }
 
   /// Make request for pending location and use response to populate a value on the locations Stream.
-  void fetchCurrent() {
-    // TODO change name to fetchPending
-    requestGetCurrent().then((response) {
-      _pending.text = response.current;
+  void fetchPending() {
+    getPending().then((response) {
+      _pending.text = response.pending;
       _pendingLocationDataSubject.add(LocationData.copy(adjustPending()));
 
       fetchPing();
@@ -158,7 +157,7 @@ class VpnBloc {
     _statusData.pingStatus = Status.loading;
     _statusDataSubject.add(StatusData.copy(_statusData));
 
-    requestGetPing().then((response) {
+    getPing().then((response) {
       // Only update pingStatus; others haven't changed.
       _statusData.pingStatus = response.resultCode == 'OK' ? Status.ok : Status.nbg;
       _statusDataSubject.add(StatusData.copy(_statusData));
@@ -170,8 +169,8 @@ class VpnBloc {
     // Notify that pending is loading.
     _pendingLocationDataSubject.add(LocationData.copy(adjustPending(pendingIsLoading: true)));
 
-    requestPostSwitch(newLocation).then((response) {
-      _pending.text = response.newLocation;
+    postSwitchPending(newLocation).then((response) {
+      _pending.text = response.newPendingLocation;
       _pendingLocationDataSubject.add(LocationData.copy(adjustPending()));
     });
   }
