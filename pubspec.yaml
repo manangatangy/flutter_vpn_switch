@@ -44,6 +44,8 @@ flutter:
     - assets/red_cross.png
     - assets/yellow_question.png
     - assets/refresh.png
+    - assets/arrow_left.png
+    - assets/arrow_right.png
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.io/assets-and-images/#resolution-aware.

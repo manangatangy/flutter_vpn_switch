@@ -69,20 +69,6 @@ class LocationData {
   }
 }
 
-//class LocationsData {
-//  LocInfo actual;
-//  LocInfo pending;
-//
-//  LocationsData({
-//    @required this.actual,
-//    @required this.pending,
-//    bool pendingIsLoading = false,
-//  }) {
-//    pending.doShow = (actual.text == 'N.A.' || actual.text != pending.text);
-//    pending.isLoading = pendingIsLoading;
-//  }
-//}
-
 class VpnBloc {
 
   // This is the current available StatusData and Locations Data
@@ -90,9 +76,7 @@ class VpnBloc {
   final LocationData _actual = LocationData();
   final LocationData _pending = LocationData();
 
-  final BehaviorSubject<StatusData>_statusDataSubject = BehaviorSubject<StatusData>(
-    seedValue: StatusData()
-  );
+  final BehaviorSubject<StatusData>_statusDataSubject = BehaviorSubject<StatusData>();
   final BehaviorSubject<LocationData>_actualLocationDataSubject = BehaviorSubject<LocationData>();
   final BehaviorSubject<LocationData>_pendingLocationDataSubject = BehaviorSubject<LocationData>();
 
@@ -175,45 +159,9 @@ class VpnBloc {
     });
   }
 
-/*
-
-    GetCurrentResponse getCurrentResponse = await requestGetCurrentResponse();
-    print('getCurrentResponse: ${getCurrentResponse.current}');
-
-
-  final Cart _cart = Cart();
-
-  final BehaviorSubject<List<CartItem>> _items =
-  BehaviorSubject<List<CartItem>>(seedValue: []);
-
-  final BehaviorSubject<int> _itemCount =
-  BehaviorSubject<int>(seedValue: 0);
-
-  final StreamController<CartAddition> _cartAdditionController =
-  StreamController<CartAddition>();
-
-  VpnBloc() {
-    _cartAdditionController.stream.listen((addition) {
-      int currentCount = _cart.itemCount;
-      _cart.add(addition.product, addition.count);
-      _items.add(_cart.items);
-      int updatedCount = _cart.itemCount;
-      if (updatedCount != currentCount) {
-        _itemCount.add(updatedCount);
-      }
+  void start() {
+    postStartStop(true).then((response) {
+      // PostStartStopResponse
     });
   }
-
-  Sink<CartAddition> get cartAddition => _cartAdditionController.sink;
-
-  Stream<int> get itemCount => _itemCount.stream;
-
-  Stream<List<CartItem>> get items => _items.stream;
-
-  void dispose() {
-    _items.close();
-    _itemCount.close();
-    _cartAdditionController.close();
-  }
-   */
 }

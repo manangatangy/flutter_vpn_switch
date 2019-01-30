@@ -48,6 +48,12 @@ class VpnPage extends StatelessWidget {
           child: HeadingPanel(),
         ),
         Positioned(
+          top: 24.0 + 60.0,
+          left: 0.0,
+          right: 0.0,
+          child: CentrePanel(),
+        ),
+        Positioned(
           bottom: 80.0,
           left: 20.0,
           child: BorderedButton(
@@ -89,13 +95,32 @@ class HeadingPanel extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
-          Expanded(
-            flex: 1,
-            child: LocationWidget(isActual: true),
+          Container(
+            padding: EdgeInsets.only(left: 36.0, top:22.0),
+            child: Text(
+              'VPN Exit:',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 18.0,
+              ),
+            ),
           ),
           Expanded(
             flex: 1,
-            child: LocationWidget(isActual: false),
+            child: Padding(
+              padding: EdgeInsets.only(left: 10.0, top:16.0),
+              child: StreamBuilder<LocationData>(
+                stream: vpnBloc.actualLocationDataStream,
+                initialData: LocationData(),
+                builder: (context, snapshot) => Text(
+                  snapshot.data.text,
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 24.0,
+                  ),
+                ),
+              ),
+            ),
           ),
           Material(
             color: Colors.transparent,
@@ -112,66 +137,6 @@ class HeadingPanel extends StatelessWidget {
             ),
           ),
         ],
-      ),
-    );
-  }
-
-}
-
-class LocationWidget extends StatelessWidget {
-  final bool isActual;
-
-  LocationWidget({
-    this.isActual,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final vpnBloc = VpnBlocProvider.of(context);
-    final Stream<LocationData> locInfoStream = isActual
-        ? vpnBloc.actualLocationDataStream
-        : vpnBloc.pendingLocationDataStream;
-    final String label = isActual ? 'Current location' : 'Pending location';
-    return StreamBuilder<LocationData>(
-      stream: locInfoStream,
-      initialData: LocationData(),
-      builder: (context, snapshot) => Padding(
-        padding: const EdgeInsets.all(8.0),
-        child: !snapshot.data.doShow ? Column() : Column(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            Expanded(
-              flex: 1,
-              child: Text(
-                label,
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 14.0,
-                ),
-              ),
-            ),
-            Expanded(
-              flex: 2,
-              child: Container(
-                child: (snapshot.data.isLoading) ?
-                Align(
-                    alignment: Alignment.centerLeft,
-                    child: Container(
-                      width: 100.0,
-                      child: LinearProgressIndicator(),
-                    )
-                ) : Text(
-                  snapshot.data.text,
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 24.0,
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }
