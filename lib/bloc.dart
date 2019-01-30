@@ -49,51 +49,70 @@ class StatusData {
   }
 }
 
-class LocationsData {
-  String actualLocation;
-  String pendingLocation;
-  bool doShowPending;
-  bool pendingIsLoading;
+class LocationData {
+  String text;
+  bool doShow;
+  bool isLoading;
 
-  LocationsData({
-    this.actualLocation = 'N.A.',
-    this.pendingLocation = '',
-  }) {
-    // The pending value will be shown only if the pendingLocation value
-    // is different from the actual vpn location or the vpn location is empty.
-    doShowPending = (actualLocation == 'N.A.' || actualLocation != pendingLocation);
-    // A special value of pending is used to indicate that a switch call is underway.
-    pendingIsLoading = (pendingLocation == 'LOADING');
-  }
+  LocationData({
+    this.text = 'N.A.',
+    this.doShow = true,
+    this.isLoading = false,
+  });
 
-  factory LocationsData.copy(LocationsData locationsData) {
-    return LocationsData(
-      actualLocation: locationsData.actualLocation,
-      pendingLocation: locationsData.pendingLocation,
+  factory LocationData.copy(LocationData src) {
+    return LocationData(
+      text: src.text,
+      doShow: src.doShow,
+      isLoading: src.isLoading,
     );
   }
-
 }
+
+//class LocationsData {
+//  LocInfo actual;
+//  LocInfo pending;
+//
+//  LocationsData({
+//    @required this.actual,
+//    @required this.pending,
+//    bool pendingIsLoading = false,
+//  }) {
+//    pending.doShow = (actual.text == 'N.A.' || actual.text != pending.text);
+//    pending.isLoading = pendingIsLoading;
+//  }
+//}
 
 class VpnBloc {
 
-  // This is the current available StatusData and LocationsData
+  // This is the current available StatusData and Locations Data
   final StatusData _statusData = StatusData();
-  final LocationsData _locationsData = LocationsData();
+  final LocationData _actual = LocationData();
+  final LocationData _pending = LocationData();
 
   final BehaviorSubject<StatusData>_statusDataSubject = BehaviorSubject<StatusData>(
     seedValue: StatusData()
   );
-  final BehaviorSubject<LocationsData>_locationsDataSubject = BehaviorSubject<LocationsData>(
-      seedValue: LocationsData()
-  );
+  final BehaviorSubject<LocationData>_actualLocationDataSubject = BehaviorSubject<LocationData>();
+  final BehaviorSubject<LocationData>_pendingLocationDataSubject = BehaviorSubject<LocationData>();
 
   Stream<StatusData> get statusDataStream => _statusDataSubject.stream;
-  Stream<LocationsData> get locationsDataStream => _locationsDataSubject.stream;
+  Stream<LocationData> get actualLocationDataStream => _actualLocationDataSubject.stream;
+  Stream<LocationData> get pendingLocationDataStream => _pendingLocationDataSubject.stream;
 
   void dispose() {
     _statusDataSubject.close();
-    _locationsDataSubject.close();
+    _actualLocationDataSubject.close();
+    _pendingLocationDataSubject.close();
+  }
+
+  /// Adjust the pending LocInfo member, so that the doShow flag is set
+  /// if the pending-location text is different from the actual-location text
+  /// or if the actual-location text is not available.
+  LocationData adjustPending({bool pendingIsLoading = false}) {
+    _pending.doShow = (_actual.text == 'N.A.' || _actual.text != _pending.text);
+    _pending.isLoading = pendingIsLoading;
+    return _pending;
   }
 
   /// Request the current location, status, and ping
@@ -108,13 +127,13 @@ class VpnBloc {
     _statusDataSubject.add(StatusData.copy(_statusData));
 
     requestGetStatus().then((response) {
-      print('getStatusResponse: ${response.squidActive}, ${response.vpnActive}, ${response.vpnLocation}');
       // Don't update pingStatus; it hasn't changed.
       _statusData.vpnStatus = response.vpnActive ? Status.ok : Status.nbg;
       _statusData.squidStatus = response.squidActive ? Status.ok : Status.nbg;
       _statusDataSubject.add(StatusData.copy(_statusData));
-      _locationsData.actualLocation = response.vpnLocation;
-      _locationsDataSubject.add(LocationsData.copy(_locationsData));
+
+      _actual.text = response.vpnLocation;
+      _actualLocationDataSubject.add(LocationData.copy(_actual));
 
       // It's may be possible to make this call inside refresh() however
       // I'm not convinced the vpn-server will be ok with that.
@@ -122,12 +141,12 @@ class VpnBloc {
     });
   }
 
-  /// Make request for current location and use response to populate a value on the locations Stream.
+  /// Make request for pending location and use response to populate a value on the locations Stream.
   void fetchCurrent() {
+    // TODO change name to fetchPending
     requestGetCurrent().then((response) {
-      print('getPingResponse: ${response.resultCode}, ${response.current}');
-      _locationsData.pendingLocation = response.current;
-      _locationsDataSubject.add(LocationsData.copy(_locationsData));
+      _pending.text = response.current;
+      _pendingLocationDataSubject.add(LocationData.copy(adjustPending()));
 
       fetchPing();
     });
@@ -140,22 +159,20 @@ class VpnBloc {
     _statusDataSubject.add(StatusData.copy(_statusData));
 
     requestGetPing().then((response) {
-      print('getPingResponse: ${response.resultCode}, ${response.target}');
       // Only update pingStatus; others haven't changed.
       _statusData.pingStatus = response.resultCode == 'OK' ? Status.ok : Status.nbg;
       _statusDataSubject.add(StatusData.copy(_statusData));
     });
   }
 
-  /// Make request to set current location and use response to populate a value on the locations Stream.
+  /// Make request to set location and use response to populate a value on the locations Stream.
   void switchLocation(String newLocation) {
-    _locationsData.pendingLocation = 'LOADING';
-    _locationsDataSubject.add(LocationsData.copy(_locationsData));
+    // Notify that pending is loading.
+    _pendingLocationDataSubject.add(LocationData.copy(adjustPending(pendingIsLoading: true)));
 
     requestPostSwitch(newLocation).then((response) {
-      print('postSwitchResponse: ${response.resultCode}, ${response.oldLocation}, ${response.newLocation}');
-      _locationsData.pendingLocation = response.newLocation;
-      _locationsDataSubject.add(LocationsData.copy(_locationsData));
+      _pending.text = response.newLocation;
+      _pendingLocationDataSubject.add(LocationData.copy(adjustPending()));
     });
   }
 

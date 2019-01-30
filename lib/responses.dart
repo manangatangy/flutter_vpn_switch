@@ -138,6 +138,7 @@ Future<GetCurrentResponse> requestGetCurrent() async {
   return GetCurrentResponse.fromJson(json.decode(response.body));
 }
 
+// TODO change the current to pending
 class GetCurrentResponse {
   final String resultCode;
   final String current;
@@ -152,6 +153,7 @@ class GetCurrentResponse {
   }
 }
 
+//TODO make clear that this is a switch to the pending location
 Future<PostSwitchResponse> requestPostSwitch(String newLocation) async {
   final response = await http.post(baseUrl + 'switch/' + newLocation);
 
@@ -177,6 +179,27 @@ class PostSwitchResponse {
   }
 }
 
+Future<PostStartStopResponse> requestStartStop(bool doStart) async {
+  final response = await http.post(baseUrl + (doStart ? 'start' : 'stop'));
+
+  if (response.statusCode != 200) {
+    throw Exception('Failed to requestStartStop');
+  }
+  return PostStartStopResponse.fromJson(json.decode(response.body));
+}
+
+
+class PostStartStopResponse {
+  final String resultCode;
+
+  PostStartStopResponse({this.resultCode});
+
+  factory PostStartStopResponse.fromJson(Map<String, dynamic> parsedJson) {
+    return PostStartStopResponse(
+      resultCode: parsedJson['resultCode'],
+    );
+  }
+}
 
 /*
     router.HandleFunc("/vpns/current", GetCurrent).Methods("GET")

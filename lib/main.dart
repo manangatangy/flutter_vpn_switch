@@ -45,7 +45,7 @@ class VpnPage extends StatelessWidget {
           top: 24.0,
           left: 0.0,
           right: 0.0,
-          child: LocationPanel(),
+          child: HeadingPanel(),
         ),
         Positioned(
           bottom: 80.0,
@@ -79,99 +79,99 @@ class VpnPage extends StatelessWidget {
   }
 }
 
-class LocationPanel extends StatelessWidget {
+class HeadingPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final vpnBloc = VpnBlocProvider.of(context);
     return Container(
       height: 60.0,
       color: Color(0x88424242),
-      child: StreamBuilder<LocationsData>(
-        stream: vpnBloc.locationsDataStream,
-        initialData: LocationsData(),
-        builder: (context, snapshot) => Row(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          Expanded(
+            flex: 1,
+            child: LocationWidget(isActual: true),
+          ),
+          Expanded(
+            flex: 1,
+            child: LocationWidget(isActual: false),
+          ),
+          Material(
+            color: Colors.transparent,
+            child: Ink.image(
+              image: AssetImage("assets/refresh.png"),
+              fit: BoxFit.cover,
+              width: 60.0,
+              child: InkWell(
+                onTap: () {
+                  vpnBloc.refresh();
+                },
+                child: null,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+}
+
+class LocationWidget extends StatelessWidget {
+  final bool isActual;
+
+  LocationWidget({
+    this.isActual,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final vpnBloc = VpnBlocProvider.of(context);
+    final Stream<LocationData> locInfoStream = isActual
+        ? vpnBloc.actualLocationDataStream
+        : vpnBloc.pendingLocationDataStream;
+    final String label = isActual ? 'Current location' : 'Pending location';
+    return StreamBuilder<LocationData>(
+      stream: locInfoStream,
+      initialData: LocationData(),
+      builder: (context, snapshot) => Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: !snapshot.data.doShow ? Column() : Column(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
             Expanded(
               flex: 1,
-              child: _locationTexts(
-                true,
-                false,
-                'VPN Exit Location',
-                snapshot.data.actualLocation,
+              child: Text(
+                label,
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 14.0,
+                ),
               ),
             ),
             Expanded(
-              flex: 1,
-              child: _locationTexts(
-                snapshot.data.doShowPending,
-                snapshot.data.pendingIsLoading,
-                'Pending Location',
-                snapshot.data.pendingLocation,
-              ),
-            ),
-            Material(
-              color: Colors.transparent,
-              child: Ink.image(
-                image: AssetImage("assets/refresh.png"),
-                fit: BoxFit.cover,
-                width: 60.0,
-                child: InkWell(
-                  onTap: () {
-                    vpnBloc.refresh();
-                  },
-                  child: null,
+              flex: 2,
+              child: Container(
+                child: (snapshot.data.isLoading) ?
+                Align(
+                    alignment: Alignment.centerLeft,
+                    child: Container(
+                      width: 100.0,
+                      child: LinearProgressIndicator(),
+                    )
+                ) : Text(
+                  snapshot.data.text,
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 24.0,
+                  ),
                 ),
               ),
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _locationTexts(bool doShow, bool showLoading, String locationLabel, String locationText) {
-    Widget data;
-    if (showLoading) {
-      data = Align(
-        alignment: Alignment.centerLeft,
-        child: Container(
-          width: 100.0,
-          child: LinearProgressIndicator(),
-        )
-      );
-    } else {
-      data = Text(
-        locationText,
-        style: TextStyle(
-          color: Colors.white,
-          fontSize: 24.0,
-        ),
-      );
-    }
-    return Padding(
-      padding: const EdgeInsets.all(8.0),
-      child: !doShow ? Column() : Column(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          Expanded(
-            flex: 1,
-            child: Text(
-              locationLabel,
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 14.0,
-              ),
-            ),
-          ),
-          Expanded(
-            flex: 2,
-            child: Container(
-              child: data,
-            ),
-          ),
-        ],
       ),
     );
   }
