@@ -14,8 +14,8 @@
          FlutterApplication and put your custom class here. -->
     <application
         android:name="io.flutter.app.FlutterApplication"
-        android:label="flutter_vpn_switch"
-        android:icon="@mipmap/ic_launcher">
+        android:label="VPN Switch"
+        android:icon="@mipmap/launcher_icon">
         <!-- The map api key is used by lib/google_maps -->
         <meta-data
             android:name="com.google.android.geo.API_KEY"

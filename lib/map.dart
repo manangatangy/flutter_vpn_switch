@@ -129,12 +129,12 @@ class _VpnMapState extends State<VpnMap> {
   mapCreated(GoogleMapController controller) async {
     mapController = controller;
     GetLocationsResponse getLocationsResponse = await getLocations();
-    int count = 2;
+    int count = 0;
     if (getLocationsResponse.resultCode == 'OK') {
       for (var location in getLocationsResponse.locations) {
         // temporary limit on markers
-        if (--count < 0) {
-          break;
+        if (++count > 2) {
+//          break;
         }
 
         OsmLatLon osmLatLon = await getOsmLatLon(location);
