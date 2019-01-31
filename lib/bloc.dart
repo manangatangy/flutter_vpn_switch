@@ -100,6 +100,11 @@ class VpnBloc {
     _vpnActivitySubject.close();
   }
 
+  /// This is the location which is used as the iteration point for the left/right arrows.
+  String get pendingLocation {
+    return _pending.text;
+  }
+
   /// Adjust the pending LocInfo member, so that the doShow flag is set
   /// if the pending-location text is different from the actual-location text
   /// or if the actual-location text is not available.

@@ -51,12 +51,6 @@ class VpnPage extends StatelessWidget {
           child: HeadingPanel(),
         ),
         Positioned(
-          top: 24.0 + 60.0,
-          left: 0.0,
-          right: 0.0,
-          child: CentrePanel(),
-        ),
-        Positioned(
           bottom: 80.0,
           left: 20.0,
           child: BorderedButton(
@@ -281,7 +275,7 @@ class _StatusIndicatorState extends State<StatusIndicator> {
   }
 }
 
-class BorderedButton extends StatefulWidget {
+class BorderedButton extends StatelessWidget {
   final String label;
   final GestureTapCallback onTap;
 
@@ -291,20 +285,13 @@ class BorderedButton extends StatefulWidget {
   });
 
   @override
-  BorderedButtonState createState() {
-    return new BorderedButtonState();
-  }
-}
-
-class BorderedButtonState extends State<BorderedButton> {
-  @override
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        shape: BoxShape.rectangle,
-        borderRadius: BorderRadius.all(
-          Radius.circular(12.0),
-        ),
+        shape: BoxShape.circle,
+//        borderRadius: BorderRadius.all(
+//          Radius.circular(12.0),
+//        ),
         border: Border.all(
           color: Colors.black26,
           style: BorderStyle.solid,
@@ -313,17 +300,17 @@ class BorderedButtonState extends State<BorderedButton> {
         color: Color(0x88424242),
       ),
       width: 80.0,
-      height: 40.0,
+      height: 80.0,
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          onTap: widget.onTap,
+          onTap: onTap,
           child: Center(
             child: Text(
-              widget.label,
+              label,
               style: TextStyle(
                 color: Colors.white,
-                fontSize: 18.0,
+                fontSize: 24.0,
               ),
             ),
           ),

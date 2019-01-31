@@ -12,6 +12,13 @@ import 'package:flutter_vpn_switch/responses.dart';
 // https://developers.google.com/maps/documentation/android-sdk/start
 
 class CentrePanel extends StatelessWidget {
+  final GestureTapCallback onTapLeftArrow;
+  final GestureTapCallback onTapRightArrow;
+
+  CentrePanel({
+    this.onTapLeftArrow,
+    this.onTapRightArrow,
+  });
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -22,14 +29,12 @@ class CentrePanel extends StatelessWidget {
         children: <Widget>[
           ArrowButton(
             imageName: 'assets/arrow_left.png',
-            onTap: () {
-            }
+            onTap: onTapLeftArrow,
           ),
           PendingLocationWidget(),
           ArrowButton(
               imageName: 'assets/arrow_right.png',
-              onTap: () {
-              }
+              onTap: onTapRightArrow,
           ),
         ],
       ),
@@ -116,7 +121,10 @@ class VpnMap extends StatefulWidget {
 }
 
 class _VpnMapState extends State<VpnMap> {
+
   GoogleMapController mapController;
+  var locationMap = Map<String, LatLng>();
+  var locationList = List<String>();
 
   mapCreated(GoogleMapController controller) async {
     mapController = controller;
@@ -130,10 +138,14 @@ class _VpnMapState extends State<VpnMap> {
         }
 
         OsmLatLon osmLatLon = await getOsmLatLon(location);
+        // TODO change from OsmLatLon to LatLon
         print('geocoded: $location = ${osmLatLon.lat}, ${osmLatLon.lon}');
-        mapController.animateCamera(
-          CameraUpdate.newLatLng(LatLng(osmLatLon.lat, osmLatLon.lon)),
-        );
+        locationMap[location] = LatLng(osmLatLon.lat, osmLatLon.lon);
+        locationList.add(location);
+
+//        mapController.animateCamera(
+//          CameraUpdate.newLatLng(LatLng(osmLatLon.lat, osmLatLon.lon)),
+//        );
         mapController.addMarker(
           MarkerOptions(
             position: LatLng(osmLatLon.lat, osmLatLon.lon),
@@ -148,20 +160,69 @@ class _VpnMapState extends State<VpnMap> {
       final vpnBloc = VpnBlocProvider.of(context);
       vpnBloc.switchLocation(marker.options.infoWindowText.title);
     });
+  }
 
+  void moveTo(String location) {
+    final vpnBloc = VpnBlocProvider.of(context);
+    vpnBloc.switchLocation(location);
+    mapController.animateCamera(
+      CameraUpdate.newLatLng(locationMap[location])
+    );
+  }
+
+  int findCurrentLocationIndex() {
+    String location = VpnBlocProvider.of(context).pendingLocation;
+    for (var i = 0; i < locationList.length; i++) {
+      if (location == locationList[i]) {
+        return i;
+      }
+    }
+    return -1;
+  }
+
+  void onTapLeftArrow() {
+    int i = findCurrentLocationIndex();
+    if (i != -1) {
+      if (++i >= locationList.length) {
+        i = 0;    // Wrap around to start
+      }
+      moveTo(locationList[i]);
+    }
+  }
+
+  void onTapRightArrow() {
+    int i = findCurrentLocationIndex();
+    if (i != -1) {
+      if (--i < 0) {
+        i = locationList.length - 1;    // Wrap around to end
+      }
+      moveTo(locationList[i]);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    return GoogleMap(
-      onMapCreated: (GoogleMapController controller) => mapCreated(controller),
-      options: GoogleMapOptions(
-        mapType: MapType.satellite,
-        cameraPosition: CameraPosition(
-          target: LatLng(37.4219999, -122.0862462),
+    return Stack(
+      children: <Widget>[
+        GoogleMap(
+          onMapCreated: (GoogleMapController controller) => mapCreated(controller),
+          options: GoogleMapOptions(
+            mapType: MapType.satellite,
+//            cameraPosition: CameraPosition(
+//              target: LatLng(37.4219999, -122.0862462),
+//            ),
+          ),
         ),
-      ),
+        Positioned(
+          top: 24.0 + 60.0,
+          left: 0.0,
+          right: 0.0,
+          child: CentrePanel(
+            onTapLeftArrow: onTapLeftArrow,
+            onTapRightArrow: onTapRightArrow,
+          ),
+        ),
+      ],
     );
   }
 }
-
