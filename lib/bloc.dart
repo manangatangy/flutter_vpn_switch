@@ -60,6 +60,7 @@ class LocationData {
     this.isLoading = false,
   });
 
+  // TODO are these copy ctors really needed?
   factory LocationData.copy(LocationData src) {
     return LocationData(
       text: src.text,
@@ -67,6 +68,12 @@ class LocationData {
       isLoading: src.isLoading,
     );
   }
+}
+
+enum VpnActivity {
+  standby,
+  starting,
+  stopping,
 }
 
 class VpnBloc {
@@ -79,15 +86,18 @@ class VpnBloc {
   final BehaviorSubject<StatusData>_statusDataSubject = BehaviorSubject<StatusData>();
   final BehaviorSubject<LocationData>_actualLocationDataSubject = BehaviorSubject<LocationData>();
   final BehaviorSubject<LocationData>_pendingLocationDataSubject = BehaviorSubject<LocationData>();
+  final BehaviorSubject<VpnActivity>_vpnActivitySubject = BehaviorSubject<VpnActivity>();
 
   Stream<StatusData> get statusDataStream => _statusDataSubject.stream;
   Stream<LocationData> get actualLocationDataStream => _actualLocationDataSubject.stream;
   Stream<LocationData> get pendingLocationDataStream => _pendingLocationDataSubject.stream;
+  Stream<VpnActivity> get vpnActivityStream => _vpnActivitySubject.stream;
 
   void dispose() {
     _statusDataSubject.close();
     _actualLocationDataSubject.close();
     _pendingLocationDataSubject.close();
+    _vpnActivitySubject.close();
   }
 
   /// Adjust the pending LocInfo member, so that the doShow flag is set
@@ -160,8 +170,19 @@ class VpnBloc {
   }
 
   void start() {
+    _vpnActivitySubject.add(VpnActivity.starting);
     postStartStop(true).then((response) {
       // PostStartStopResponse
+      fetchStatus();
+      _vpnActivitySubject.add(VpnActivity.standby);
+    });
+  }
+
+  void stop() {
+    _vpnActivitySubject.add(VpnActivity.stopping);
+    postStartStop(false).then((response) {
+      fetchStatus();
+      _vpnActivitySubject.add(VpnActivity.standby);
     });
   }
 }

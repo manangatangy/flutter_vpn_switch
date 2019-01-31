@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_vpn_switch/bloc.dart';
 import 'package:flutter_vpn_switch/map.dart';
@@ -34,6 +36,7 @@ class VpnPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final vpnBloc = VpnBlocProvider.of(context);
     return Stack(
       children: <Widget>[
         Container(
@@ -59,7 +62,7 @@ class VpnPage extends StatelessWidget {
           child: BorderedButton(
             label: 'Stop',
             onTap: () {
-
+              vpnBloc.stop();
             },
           ),
         ),
@@ -69,7 +72,7 @@ class VpnPage extends StatelessWidget {
           child: BorderedButton(
             label: 'Start',
             onTap: () {
-
+              vpnBloc.start();
             },
           ),
         ),
@@ -79,6 +82,51 @@ class VpnPage extends StatelessWidget {
           left: 0.0,
           right: 0.0,
           child: StatusPanel(),
+        ),
+
+        StreamBuilder<VpnActivity>(
+          stream: vpnBloc.vpnActivityStream,
+          initialData: VpnActivity.standby,
+          builder: (context, snapshot) =>
+          (snapshot.data == VpnActivity.standby) ?
+          Container() :
+          Positioned.fill(
+            child: BackdropFilter(
+              filter: ImageFilter.blur(
+                sigmaX: 3.0,
+                sigmaY: 3.0,
+              ),
+              child: Container(
+                color: Colors.black.withOpacity(0),
+                child: Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        width: 200.0,
+                          height: 200.0,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 16,
+                          ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.all(32.0),
+                        child: new Text(
+                          (snapshot.data == VpnActivity.starting) ?
+                          'Starting' :
+                          'Stopping',
+                          style: TextStyle(
+                            fontSize: 24,
+                            color: Colors.yellow,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
         ),
       ],
     );
