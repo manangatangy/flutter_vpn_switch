@@ -123,7 +123,8 @@ class VpnMap extends StatefulWidget {
 class _VpnMapState extends State<VpnMap> {
 
   GoogleMapController mapController;
-  var locationMap = Map<String, LatLng>();
+//  var locationMap = Map<String, LatLng>();
+  // Need a list that we can step through.
   var locationList = List<String>();
 
   mapCreated(GoogleMapController controller) async {
@@ -131,28 +132,31 @@ class _VpnMapState extends State<VpnMap> {
     GetLocationsResponse getLocationsResponse = await getLocations();
     int count = 0;
     if (getLocationsResponse.resultCode == 'OK') {
-      for (var location in getLocationsResponse.locations) {
+      for (var name in getLocationsResponse.locations) {
         // temporary limit on markers
-        if (++count > 2) {
-//          break;
+        if (++count > 7) {
+          break;
         }
 
-        OsmLatLon osmLatLon = await getOsmLatLon(location);
-        // TODO change from OsmLatLon to LatLon
-        print('geocoded: $location = ${osmLatLon.lat}, ${osmLatLon.lon}');
-        locationMap[location] = LatLng(osmLatLon.lat, osmLatLon.lon);
-        locationList.add(location);
+        var latLng = await VpnBlocProvider.of(context).locationStore.getLatLng(name);
+        if (latLng != null) {
+          locationList.add(name);
+          mapController.addMarker(
+            MarkerOptions(
+              position: latLng,
+              infoWindowText: InfoWindowText(name, null),
+//            icon: BitmapDescriptor.fromAsset('images/flutter.png',),
+            ),
+          );
+        }
+
+//        OsmLatLon osmLatLon = await getOsmLatLon(location);
+//        // TODO change from OsmLatLon to LatLon
+//        locationMap[location] = LatLng(osmLatLon.lat, osmLatLon.lon);
 
 //        mapController.animateCamera(
 //          CameraUpdate.newLatLng(LatLng(osmLatLon.lat, osmLatLon.lon)),
 //        );
-        mapController.addMarker(
-          MarkerOptions(
-            position: LatLng(osmLatLon.lat, osmLatLon.lon),
-            infoWindowText: InfoWindowText(location, null),
-//            icon: BitmapDescriptor.fromAsset('images/flutter.png',),
-          ),
-        );
 
       }
     }
@@ -162,11 +166,13 @@ class _VpnMapState extends State<VpnMap> {
     });
   }
 
-  void moveTo(String location) {
+  void moveTo(String name) async {
     final vpnBloc = VpnBlocProvider.of(context);
-    vpnBloc.switchLocation(location);
+    vpnBloc.switchLocation(name);
     mapController.animateCamera(
-      CameraUpdate.newLatLng(locationMap[location])
+      CameraUpdate.newLatLng(
+          await vpnBloc.locationStore.getLatLng(name)
+      )
     );
   }
 

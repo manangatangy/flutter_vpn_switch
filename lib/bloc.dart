@@ -1,8 +1,11 @@
 import 'dart:async';
 
 import 'package:flutter/widgets.dart';
+import 'package:flutter_vpn_switch/locations.dart';
 import 'package:flutter_vpn_switch/responses.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:rxdart/subjects.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class VpnBlocProvider extends InheritedWidget {
   final VpnBloc vpnBloc;
@@ -77,6 +80,9 @@ enum VpnActivity {
 }
 
 class VpnBloc {
+
+  final LocationStore _locationStore = LocationStore();
+  LocationStore get locationStore => _locationStore;
 
   // This is the current available StatusData and Locations Data
   final StatusData _statusData = StatusData();

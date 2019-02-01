@@ -27,6 +27,8 @@ Future<OsmLatLon> getOsmLatLon(String location) async {
   return OsmLatLon.fromJson(json.decode(response.body)[0]);
 }
 
+// TODO use LatLng instead of OsmLatLon
+
 class OsmLatLon {
   final double lat;
   final double lon;
@@ -46,8 +48,8 @@ class OsmLatLon {
 }
 
 final homeBaseUrl = 'http://192.168.0.10:8080/vpns/';    // at home
-final workBaseUrl = 'http://10.57.129.233:8080/vpns/';    // at work
-final baseUrl = homeBaseUrl;
+final workBaseUrl = 'http://10.57.129.172:8080/vpns/';    // at work
+final baseUrl = workBaseUrl;
 
 Future<GetLocationsResponse> getLocations() async {
   final response = await http.get(baseUrl + 'locations');

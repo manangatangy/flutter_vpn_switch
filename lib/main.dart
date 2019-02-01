@@ -36,9 +36,11 @@ class HomePage extends StatelessWidget {
               ),
               new Divider(),
               new ListTile(
-                  title: new Text("Settings"),
+                  title: new Text("Clear"),
                   trailing: new Icon(Icons.settings),
-                  onTap: () {}),
+                  onTap: () {
+                    vpnBloc.locationStore.clear();
+                  }),
             ],
           ),
         ),
