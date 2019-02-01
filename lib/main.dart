@@ -16,9 +16,67 @@ class MyApp extends StatelessWidget {
           primarySwatch: Colors.blue,
         ),
         home: Material(
-            child: VpnPage(),
+            child: HomePage(),
         ),
       ),
+    );
+  }
+}
+
+class HomePage extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final vpnBloc = VpnBlocProvider.of(context);
+    return Scaffold(
+        drawer: new Drawer(
+          child: new ListView(
+            children: <Widget>[
+              new ListTile(
+                title: new Text("WELCOME"),
+              ),
+              new Divider(),
+              new ListTile(
+                  title: new Text("Settings"),
+                  trailing: new Icon(Icons.settings),
+                  onTap: () {}),
+            ],
+          ),
+        ),
+        body: new Stack(
+          children: <Widget>[
+            VpnPage(),
+            Positioned(
+              top: 0,
+              left: 0,
+              right: 0,
+              child: AppBar(
+                title: StreamBuilder<LocationData>(
+                  stream: vpnBloc.actualLocationDataStream,
+                  initialData: LocationData(),
+                  builder: (context, snapshot) => Text(
+                    snapshot.data.text,
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 24.0,
+                    ),
+                  ),
+                ),
+                actions: <Widget>[
+                  IconButton(
+                    icon: ImageIcon(
+                        AssetImage("assets/refresh.png"),
+                    ),
+                    onPressed: () {
+                      vpnBloc.refresh();
+                    },
+                  ),
+                ],
+                backgroundColor: Color(0x88424242),
+                elevation: 0,
+              ),
+            )
+          ],
+        ),
     );
   }
 }
@@ -43,12 +101,6 @@ class VpnPage extends StatelessWidget {
           height: MediaQuery.of(context).size.height,
           width: MediaQuery.of(context).size.width,
           child: VpnMap(),
-        ),
-        Positioned(
-          top: 24.0,
-          left: 0.0,
-          right: 0.0,
-          child: HeadingPanel(),
         ),
         Positioned(
           bottom: 80.0,
@@ -123,63 +175,6 @@ class VpnPage extends StatelessWidget {
           ),
         ),
       ],
-    );
-  }
-}
-
-class HeadingPanel extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    final vpnBloc = VpnBlocProvider.of(context);
-    return Container(
-      height: 60.0,
-      color: Color(0x88424242),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: <Widget>[
-          Container(
-            padding: EdgeInsets.only(left: 36.0, top:22.0),
-            child: Text(
-              'VPN Exit:',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 18.0,
-              ),
-            ),
-          ),
-          Expanded(
-            flex: 1,
-            child: Padding(
-              padding: EdgeInsets.only(left: 10.0, top:16.0),
-              child: StreamBuilder<LocationData>(
-                stream: vpnBloc.actualLocationDataStream,
-                initialData: LocationData(),
-                builder: (context, snapshot) => Text(
-                  snapshot.data.text,
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 24.0,
-                  ),
-                ),
-              ),
-            ),
-          ),
-          Material(
-            color: Colors.transparent,
-            child: Ink.image(
-              image: AssetImage("assets/refresh.png"),
-              fit: BoxFit.cover,
-              width: 60.0,
-              child: InkWell(
-                onTap: () {
-                  vpnBloc.refresh();
-                },
-                child: null,
-              ),
-            ),
-          ),
-        ],
-      ),
     );
   }
 }
