@@ -2,8 +2,55 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_vpn_switch/bloc.dart';
+import 'package:flutter_vpn_switch/crashy.dart';
 import 'package:flutter_vpn_switch/map.dart';
 
+
+Future<String> returnAsFuture(String label, String value, bool ok) {
+  String returnString = ok ? 'value-from-$label' : 'error-from-$label';
+  Future<String> returnValue = ok ? Future.value(returnString) : Future.error(returnString);
+  print("$label called with '$value' and will return type:'${returnValue.runtimeType}' with value:'$returnString'");
+  return returnValue;
+}
+
+String returnAsString(String label, String value, bool ok) {
+  String returnString = ok ? 'value-from-$label' : 'error-from-$label';
+  String returnValue = returnString;
+  if (ok) {
+    print("$label called with '$value' and will return type:'${returnValue.runtimeType}' with value:'$returnString'");
+    return returnValue;
+  } else {
+    print("$label called with '$value' and will throw type:'${returnValue.runtimeType}' with value:'$returnString'");
+    throw returnValue;
+  }
+}
+
+// Completing a Future (as a success) can be done by returning Future.value() or value; the successor
+// (registered with then) will be passed the value in both cases.
+// Completing a Future (as fail) can be done by returning Future.error() or throwing an error value;
+// the successor, registered with catchError, or registered with then(onError:) will be passed the
+// error value in both cases.
+
+void mainFuture() {
+  returnAsFuture('process1', 'valueA', true).then(
+          (String value) => returnAsFuture('process2', value, true)
+  ).then(
+          (String value) => returnAsString('process3', value, true)
+  ).then(
+          (String value) => returnAsString('process4', value, false)
+  ).then(
+          (String value) => returnAsFuture('process5', value, true)
+  ).catchError(
+          (value) => returnAsString('catchError1', value, false)
+  ).then(
+          (String value) => returnAsString('process-final', value, true)
+  ).catchError(
+          (value) => returnAsString('catchError-final', value, true)
+  );
+}
+
+//void main() => mainFuture();
+//void main() => crashyMain();
 void main() => runApp(MyApp());
 
 class MyApp extends StatelessWidget {
