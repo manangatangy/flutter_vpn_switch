@@ -129,16 +129,12 @@ class _VpnMapState extends State<VpnMap> {
 
   mapCreated(GoogleMapController controller) async {
     mapController = controller;
-    GetLocationsResponse getLocationsResponse = await getLocations();
-    int count = 0;
-    if (getLocationsResponse.resultCode == 'OK') {
-      for (var name in getLocationsResponse.locations) {
-        // temporary limit on markers
-        if (++count > 7) {
-          break;
-        }
+    final vpnBloc = VpnBlocProvider.of(context);
 
-        var latLng = await VpnBlocProvider.of(context).locationStore.getLatLng(name);
+    List<String> locations = await vpnBloc.getLocationList();
+    if (locations != null) {
+      for (var name in locations) {
+        var latLng = await vpnBloc.getLatLng(name);
         if (latLng != null) {
           locationList.add(name);
           mapController.addMarker(
@@ -149,15 +145,6 @@ class _VpnMapState extends State<VpnMap> {
             ),
           );
         }
-
-//        OsmLatLon osmLatLon = await getOsmLatLon(location);
-//        // TODO change from OsmLatLon to LatLon
-//        locationMap[location] = LatLng(osmLatLon.lat, osmLatLon.lon);
-
-//        mapController.animateCamera(
-//          CameraUpdate.newLatLng(LatLng(osmLatLon.lat, osmLatLon.lon)),
-//        );
-
       }
     }
     mapController.onMarkerTapped.add((Marker marker) {
@@ -171,7 +158,7 @@ class _VpnMapState extends State<VpnMap> {
     vpnBloc.switchLocation(name);
     mapController.animateCamera(
       CameraUpdate.newLatLng(
-          await vpnBloc.locationStore.getLatLng(name)
+          await vpnBloc.getLatLng(name)
       )
     );
   }

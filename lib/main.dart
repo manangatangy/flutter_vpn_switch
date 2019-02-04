@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_vpn_switch/bloc.dart';
 import 'package:flutter_vpn_switch/crashy.dart';
 import 'package:flutter_vpn_switch/map.dart';
+import 'package:flutter_vpn_switch/responses.dart';
 
 
 Future<String> returnAsFuture(String label, String value, bool ok) {
@@ -179,11 +180,11 @@ class VpnPage extends StatelessWidget {
           child: StatusPanel(),
         ),
 
-        StreamBuilder<VpnActivity>(
-          stream: vpnBloc.vpnActivityStream,
-          initialData: VpnActivity.standby,
+        StreamBuilder<VpnLoadingIndicator>(
+          stream: vpnBloc.loadingIndicator,
+          initialData: VpnLoadingIndicator(isLoading: false),
           builder: (context, snapshot) =>
-          (snapshot.data == VpnActivity.standby) ?
+          (!snapshot.data.isLoading) ?
           Container() :
           Positioned.fill(
             child: BackdropFilter(
@@ -207,9 +208,7 @@ class VpnPage extends StatelessWidget {
                       Padding(
                         padding: const EdgeInsets.all(32.0),
                         child: new Text(
-                          (snapshot.data == VpnActivity.starting) ?
-                          'Starting' :
-                          'Stopping',
+                          snapshot.data.label,
                           style: TextStyle(
                             fontSize: 24,
                             color: Colors.yellow,

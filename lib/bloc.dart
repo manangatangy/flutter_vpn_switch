@@ -73,10 +73,13 @@ class LocationData {
   }
 }
 
-enum VpnActivity {
-  standby,
-  starting,
-  stopping,
+class VpnLoadingIndicator {
+  final bool isLoading;
+  final String label;
+  VpnLoadingIndicator({
+    this.isLoading,
+    this.label,
+  });
 }
 
 class VpnBloc {
@@ -92,18 +95,29 @@ class VpnBloc {
   final BehaviorSubject<StatusData>_statusDataSubject = BehaviorSubject<StatusData>();
   final BehaviorSubject<LocationData>_actualLocationDataSubject = BehaviorSubject<LocationData>();
   final BehaviorSubject<LocationData>_pendingLocationDataSubject = BehaviorSubject<LocationData>();
-  final BehaviorSubject<VpnActivity>_vpnActivitySubject = BehaviorSubject<VpnActivity>();
+  final BehaviorSubject<VpnLoadingIndicator>_loadingIndicatorSubject = BehaviorSubject<VpnLoadingIndicator>();
 
   Stream<StatusData> get statusDataStream => _statusDataSubject.stream;
   Stream<LocationData> get actualLocationDataStream => _actualLocationDataSubject.stream;
   Stream<LocationData> get pendingLocationDataStream => _pendingLocationDataSubject.stream;
-  Stream<VpnActivity> get vpnActivityStream => _vpnActivitySubject.stream;
+  Stream<VpnLoadingIndicator> get loadingIndicator => _loadingIndicatorSubject.stream;
+
+  void _showLoadingSpinner(String label) {
+    _loadingIndicatorSubject.add(VpnLoadingIndicator(
+      isLoading: true,
+      label: label,
+    ));
+  }
+
+  void _hideLoadingSpinner() {
+    _loadingIndicatorSubject.add(VpnLoadingIndicator(isLoading: false));
+  }
 
   void dispose() {
     _statusDataSubject.close();
     _actualLocationDataSubject.close();
     _pendingLocationDataSubject.close();
-    _vpnActivitySubject.close();
+    _loadingIndicatorSubject.close();
   }
 
   /// This is the location which is used as the iteration point for the left/right arrows.
@@ -114,24 +128,21 @@ class VpnBloc {
   /// Adjust the pending LocInfo member, so that the doShow flag is set
   /// if the pending-location text is different from the actual-location text
   /// or if the actual-location text is not available.
-  LocationData adjustPending({bool pendingIsLoading = false}) {
+  LocationData _adjustPending({bool pendingIsLoading = false}) {
     _pending.doShow = (_actual.text == 'N.A.' || _actual.text != _pending.text);
     _pending.isLoading = pendingIsLoading;
     return _pending;
   }
 
-  /// Request the current location, status, and ping
-  void refresh() {
-    fetchStatus();
-  }
+
   /// Make request for status and use response to populate a value on the statusData Stream.
-  void fetchStatus() {
+  Future<void> _fetchStatus() {
     // First reset status (pingStatus hasn't changed: use current value).
     _statusData.vpnStatus = Status.loading;
     _statusData.squidStatus = Status.loading;
     _statusDataSubject.add(StatusData.copy(_statusData));
 
-    getStatus().then((response) {
+    return getStatus().then((response) {
       // Don't update pingStatus; it hasn't changed.
       _statusData.vpnStatus = response.vpnActive ? Status.ok : Status.nbg;
       _statusData.squidStatus = response.squidActive ? Status.ok : Status.nbg;
@@ -142,58 +153,93 @@ class VpnBloc {
 
       // It's may be possible to make this call inside refresh() however
       // I'm not convinced the vpn-server will be ok with that.
-      fetchPending();
+//      fetchPending();
     });
   }
 
   /// Make request for pending location and use response to populate a value on the locations Stream.
-  void fetchPending() {
-    getPending().then((response) {
+  Future<void> _fetchPending() {
+    return getPending().then((response) {
       _pending.text = response.pending;
-      _pendingLocationDataSubject.add(LocationData.copy(adjustPending()));
-
-      fetchPing();
+      _pendingLocationDataSubject.add(LocationData.copy(_adjustPending()));
+//
+//      fetchPing();
     });
   }
 
   /// Make request for ping and use response to populate a value on the statusData Stream.
-  void fetchPing() {
+  Future<void> _fetchPing() {
     // First reset pingStatus (others haven't changed: use current values).
     _statusData.pingStatus = Status.loading;
     _statusDataSubject.add(StatusData.copy(_statusData));
 
-    getPing().then((response) {
+    return getPing().then((response) {
       // Only update pingStatus; others haven't changed.
       _statusData.pingStatus = response.resultCode == 'OK' ? Status.ok : Status.nbg;
       _statusDataSubject.add(StatusData.copy(_statusData));
     });
   }
 
+  void displayError(String error) {
+    print('error happens duh $error');
+  }
+
+  Future<List<String>> getLocationList() {
+    _showLoadingSpinner('Fetching locations');
+    return getLocations().then((getLocationsResponse) {
+      return getLocationsResponse.locations;
+    }).catchError((e) => displayError(e)
+    ).whenComplete(() => _hideLoadingSpinner());
+  }
+
+  Future<LatLng> getLatLng(String name) async {
+    var latLng = await locationStore.getLatLng(name);
+
+  }
+
+  void refresh() {
+    _showLoadingSpinner('Refreshing');
+    _fetchStatus()
+        .then((_) => _fetchPending())
+        .then((_) => _fetchPing())
+        .catchError((e) => displayError(e))
+        .whenComplete(() => _hideLoadingSpinner()
+    );
+  }
+
   /// Make request to set location and use response to populate a value on the locations Stream.
   void switchLocation(String newLocation) {
     // Notify that pending is loading.
-    _pendingLocationDataSubject.add(LocationData.copy(adjustPending(pendingIsLoading: true)));
+    _pendingLocationDataSubject.add(LocationData.copy(_adjustPending(pendingIsLoading: true)));
 
     postSwitchPending(newLocation).then((response) {
       _pending.text = response.newPendingLocation;
-      _pendingLocationDataSubject.add(LocationData.copy(adjustPending()));
+    }).catchError((e) =>
+        displayError(e)
+    ).whenComplete(() {
+      _pendingLocationDataSubject.add(LocationData.copy(_adjustPending()));
     });
   }
 
   void start() {
-    _vpnActivitySubject.add(VpnActivity.starting);
-    postStartStop(true).then((response) {
-      // PostStartStopResponse
-      fetchStatus();
-      _vpnActivitySubject.add(VpnActivity.standby);
-    });
+    _showLoadingSpinner('Starting');
+    postAction(VpnAction.Start)
+        .then((_) => _fetchStatus())
+        .then((_) => _fetchPending())
+        .then((_) => _fetchPing())
+        .catchError((e) => displayError(e))
+        .whenComplete(() => _hideLoadingSpinner()
+    );
   }
 
   void stop() {
-    _vpnActivitySubject.add(VpnActivity.stopping);
-    postStartStop(false).then((response) {
-      fetchStatus();
-      _vpnActivitySubject.add(VpnActivity.standby);
-    });
+    _showLoadingSpinner('Stopping');
+    postAction(VpnAction.Stop)
+        .then((_) => _fetchStatus())
+        .then((_) => _fetchPending())
+        .then((_) => _fetchPing())
+        .catchError((e) => displayError(e))
+        .whenComplete(() => _hideLoadingSpinner()
+    );
   }
 }
