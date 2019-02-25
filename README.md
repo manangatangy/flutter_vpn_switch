@@ -1,16 +1,14 @@
 # flutter_vpn_switch
 
-A new Flutter project.
+This project contains 3 subprojects
+- the flutter_vpn_switch flutter app
+- the vpnswitch folder; a golang server, to be run
+on the rpi, that provides a rest api to control the
+open-vpn client via shell scripts.
 
-## Getting Started
+- the vpntest folder; a golang command line program
+that can exercise the vpnswitch api
 
-This project is a starting point for a Flutter application.
+This directory contains the reporter for the syncbox system.
+It is a subproject of the syncbox project.
 
-A few resources to get you started if this is your first Flutter project:
-
-- [Lab: Write your first Flutter app](https://flutter.io/docs/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://flutter.io/docs/cookbook)
-
-For help getting started with Flutter, view our 
-[online documentation](https://flutter.io/docs), which offers tutorials, 
-samples, guidance on mobile development, and a full API reference.
