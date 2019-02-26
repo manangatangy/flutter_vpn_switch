@@ -17,7 +17,7 @@ class LocationStore {
 
   /// Return the geocode for this location, or else null.
   /// If not in the cache, then lookup from open street map's api and save to
-  /// shared prefs for next session.
+  /// shared prefs for next session.  This _geocode call may throw an exception.
   Future<LatLng> getLatLng(String name) async {
     if (_locationCache == null) {
       await _loadCache();

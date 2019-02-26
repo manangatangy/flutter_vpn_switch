@@ -129,9 +129,14 @@ class _VpnMapState extends State<VpnMap> {
 
   mapCreated(GoogleMapController controller) async {
     mapController = controller;
+    // Now we have a map, request the locations
     final vpnBloc = VpnBlocProvider.of(context);
 
     List<String> locations = await vpnBloc.getLocationList();
+    // TODO the getLocationList should send back locations via a stream
+    // maybe a future stream ? the reader of which adds markers to the
+    // mapController. The errors can then be handler in the bloc
+
     if (locations != null) {
       for (var name in locations) {
         var latLng = await vpnBloc.getLatLng(name);

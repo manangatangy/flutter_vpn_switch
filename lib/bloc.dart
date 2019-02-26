@@ -180,7 +180,7 @@ class VpnBloc {
     });
   }
 
-  void displayError(String error) {
+  void displayError(dynamic error) {
     print('error happens duh $error');
   }
 
@@ -192,9 +192,8 @@ class VpnBloc {
     ).whenComplete(() => _hideLoadingSpinner());
   }
 
-  Future<LatLng> getLatLng(String name) async {
-    var latLng = await locationStore.getLatLng(name);
-    return latLng;
+  Future<LatLng> getLatLng(String name) {
+    return locationStore.getLatLng(name);
   }
 
   void refresh() {
