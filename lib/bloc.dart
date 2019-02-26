@@ -194,7 +194,7 @@ class VpnBloc {
 
   Future<LatLng> getLatLng(String name) async {
     var latLng = await locationStore.getLatLng(name);
-
+    return latLng;
   }
 
   void refresh() {

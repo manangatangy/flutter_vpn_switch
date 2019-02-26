@@ -180,6 +180,11 @@ class VpnPage extends StatelessWidget {
           child: StatusPanel(),
         ),
 
+        // A loading dialog could also be implemented as
+        // new Opacity(
+        //            opacity: 0.3,
+        //            child: const ModalBarrier(dismissible: false, color: Colors.grey),
+        //          )
         StreamBuilder<VpnLoadingIndicator>(
           stream: vpnBloc.loadingIndicator,
           initialData: VpnLoadingIndicator(isLoading: false),
