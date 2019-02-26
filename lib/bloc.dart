@@ -64,13 +64,13 @@ class LocationData {
   });
 
   // TODO are these copy ctors really needed?
-  factory LocationData.copy(LocationData src) {
-    return LocationData(
-      text: src.text,
-      doShow: src.doShow,
-      isLoading: src.isLoading,
-    );
-  }
+//  factory LocationData.copy(LocationData src) {
+//    return LocationData(
+//      text: src.text,
+//      doShow: src.doShow,
+//      isLoading: src.isLoading,
+//    );
+//  }
 }
 
 class VpnLoadingIndicator {
@@ -149,7 +149,7 @@ class VpnBloc {
       _statusDataSubject.add(StatusData.copy(_statusData));
 
       _actual.text = response.vpnLocation;
-      _actualLocationDataSubject.add(LocationData.copy(_actual));
+      _actualLocationDataSubject.add(_actual);
 
       // It's may be possible to make this call inside refresh() however
       // I'm not convinced the vpn-server will be ok with that.
@@ -161,7 +161,7 @@ class VpnBloc {
   Future<void> _fetchPending() {
     return getPending().then((response) {
       _pending.text = response.pending;
-      _pendingLocationDataSubject.add(LocationData.copy(_adjustPending()));
+      _pendingLocationDataSubject.add(_adjustPending());
 //
 //      fetchPing();
     });
@@ -209,14 +209,14 @@ class VpnBloc {
   /// Make request to set location and use response to populate a value on the locations Stream.
   void switchLocation(String newLocation) {
     // Notify that pending is loading.
-    _pendingLocationDataSubject.add(LocationData.copy(_adjustPending(pendingIsLoading: true)));
+    _pendingLocationDataSubject.add(_adjustPending(pendingIsLoading: true));
 
     postSwitchPending(newLocation).then((response) {
       _pending.text = response.newPendingLocation;
     }).catchError((e) =>
         displayError(e)
     ).whenComplete(() {
-      _pendingLocationDataSubject.add(LocationData.copy(_adjustPending()));
+      _pendingLocationDataSubject.add(_adjustPending());
     });
   }
 

@@ -5,7 +5,7 @@ import 'package:http/http.dart' as http;
 
 final homeBaseUrl = 'http://192.168.0.10:8080/vpns/';    // at home
 final workBaseUrl = 'http://10.57.129.172:8080/vpns/';    // at work
-final baseUrl = workBaseUrl;
+final baseUrl = homeBaseUrl;
 
 Future<GetLocationsResponse> getLocations() async {
   final response = await http.get(baseUrl + 'locations');
