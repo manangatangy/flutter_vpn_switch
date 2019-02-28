@@ -184,9 +184,6 @@ class _DrawerMenuState extends State<DrawerMenu> {
             child: FlatButton(
               color: Colors.lightBlue,
               onPressed: () {
-                SharedPreferences.getInstance().then((SharedPreferences prefs) {
-                  prefs.remove("IP-address");
-                });
                 vpnBloc.locationStore.clear();
               },
               child: Text("Clear Location Cache"),

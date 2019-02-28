@@ -131,12 +131,7 @@ class _VpnMapState extends State<VpnMap> {
     mapController = controller;
     // Now we have a map, request the locations
     final vpnBloc = VpnBlocProvider.of(context);
-
     List<String> locations = await vpnBloc.getLocationList();
-    // TODO the getLocationList should send back locations via a stream
-    // maybe a future stream ? the reader of which adds markers to the
-    // mapController. The errors can then be handler in the bloc
-
     if (locations != null) {
       for (var name in locations) {
         var latLng = await vpnBloc.getLatLng(name);
@@ -151,11 +146,11 @@ class _VpnMapState extends State<VpnMap> {
           );
         }
       }
+      mapController.onMarkerTapped.add((Marker marker) {
+        final vpnBloc = VpnBlocProvider.of(context);
+        vpnBloc.switchLocation(marker.options.infoWindowText.title);
+      });
     }
-    mapController.onMarkerTapped.add((Marker marker) {
-      final vpnBloc = VpnBlocProvider.of(context);
-      vpnBloc.switchLocation(marker.options.infoWindowText.title);
-    });
   }
 
   void moveTo(String name) async {
@@ -169,10 +164,16 @@ class _VpnMapState extends State<VpnMap> {
   }
 
   int findCurrentLocationIndex() {
-    String location = VpnBlocProvider.of(context).pendingLocation;
-    for (var i = 0; i < locationList.length; i++) {
-      if (location == locationList[i]) {
-        return i;
+    // Check if the locations loaded ok (during the first call to mapCreated)
+    if (locationList.isEmpty && mapController != null) {
+      print("calling mapCreated again");
+      Future.delayed(Duration.zero, () => mapCreated(mapController)) ;
+    } else {
+      String location = VpnBlocProvider.of(context).pendingLocation;
+      for (var i = 0; i < locationList.length; i++) {
+        if (location == locationList[i]) {
+          return i;
+        }
       }
     }
     return -1;

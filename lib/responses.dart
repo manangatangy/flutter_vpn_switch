@@ -25,7 +25,6 @@ Future<http.Response> apiGet(String path) async {
 
 Future<http.Response> apiPost(String path) async {
   String url = await apiUrl(path);
-  url = "http:" + url;
   print("posting: $url");
   return await http.post(url);
 }
