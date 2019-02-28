@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_vpn_switch/locations.dart';
 import 'package:flutter_vpn_switch/responses.dart';
@@ -99,6 +100,29 @@ class VpnBloc {
   final BehaviorSubject<Indicator>_loadingIndicatorSubject = BehaviorSubject<Indicator>();
   final BehaviorSubject<Indicator>_errorIndicatorSubject = BehaviorSubject<Indicator>();
 
+  /// If any of the status/locations are 'loading'
+  /// ie displaying a spinner, then reset them to unknown.
+  void _resetLoadingFields() {
+    if (_statusData.vpnStatus == Status.loading) {
+      _statusData.vpnStatus = Status.unknown;
+    }
+    if (_statusData.squidStatus == Status.loading) {
+      _statusData.squidStatus = Status.unknown;
+    }
+    if (_statusData.pingStatus == Status.loading) {
+      _statusData.pingStatus = Status.unknown;
+    }
+    _statusDataSubject.add(StatusData.copy(_statusData));
+    if (_actual.isLoading) {
+      _actual.isLoading = false;
+      _actualLocationDataSubject.add(_actual);
+    }
+    if (_pending.isLoading) {
+      _pending.isLoading = false;
+      _pendingLocationDataSubject.add(_adjustPending());
+    }
+  }
+
   /// There are several streams that clients may receive events from.  The StatusData is a Status
   /// field for vpn, squid and ping (each of which may be loading, ok, nbg, or unknown).  There
   /// is also a LocationData for the actual/current location and the pending location. Pending is
@@ -123,7 +147,18 @@ class VpnBloc {
       isActive: false,
     ));
   }
-  
+
+  void setError(dynamic error) {
+    print('==> setError called $error');
+    _setIndicator(_errorIndicatorSubject, error.toString());
+  }
+
+  void clearError() {
+    print("==> clearError called");
+    _clearIndicator(_errorIndicatorSubject);
+    _resetLoadingFields();
+  }
+
   void dispose() {
     _statusDataSubject.close();
     _actualLocationDataSubject.close();
@@ -192,15 +227,28 @@ class VpnBloc {
     });
   }
 
-  void displayError(dynamic error) {
-    print('error happens duh $error');
-  }
+//  void displayErrorDialog(dynamic error, BuildContext context) {
+//    print('xxx error happens duh $error');
+//    AlertDialog(
+//      title: new Text("Error"),
+//      content: Text(error.toString()),
+//      actions: <Widget>[
+//        new FlatButton(
+//          child: new Text("Close"),
+//          onPressed: () {
+//            Navigator.of(context).pop();
+//            _clearIndicator(_errorIndicatorSubject);
+//          },
+//        ),
+//      ],
+//    );
+//  }
 
   Future<List<String>> getLocationList() {
     _setIndicator(_loadingIndicatorSubject, 'Fetching locations');
     return getLocations().then((getLocationsResponse) {
       return getLocationsResponse.locations;
-    }).catchError((e) => displayError(e)
+    }).catchError((e) => setError(e)
     ).whenComplete(() => _clearIndicator(_loadingIndicatorSubject));
   }
 
@@ -213,7 +261,7 @@ class VpnBloc {
     _fetchStatus()
         .then((_) => _fetchPending())
         .then((_) => _fetchPing())
-        .catchError((e) => displayError(e))
+        .catchError((e) => setError(e))
         .whenComplete(() => _clearIndicator(_loadingIndicatorSubject)
     );
   }
@@ -226,7 +274,7 @@ class VpnBloc {
     postSwitchPending(newLocation).then((response) {
       _pending.text = response.newPendingLocation;
     }).catchError((e) =>
-        displayError(e)
+        setError(e)
     ).whenComplete(() {
       _pendingLocationDataSubject.add(_adjustPending());
     });
@@ -238,18 +286,18 @@ class VpnBloc {
         .then((_) => _fetchStatus())
         .then((_) => _fetchPending())
         .then((_) => _fetchPing())
-        .catchError((e) => displayError(e))
+        .catchError((e) => setError(e))
         .whenComplete(() => _clearIndicator(_loadingIndicatorSubject)
     );
   }
 
-  void stop() {
+  void stop(BuildContext context) {
     _setIndicator(_loadingIndicatorSubject, 'Stopping');
     postAction(VpnAction.Stop)
         .then((_) => _fetchStatus())
         .then((_) => _fetchPending())
         .then((_) => _fetchPing())
-        .catchError((e) => displayError(e))
+        .catchError((e) => setError(e))
         .whenComplete(() => _clearIndicator(_loadingIndicatorSubject)
     );
   }

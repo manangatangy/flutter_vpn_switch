@@ -10,7 +10,11 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 Future<String> apiUrl(String path) async {
   SharedPreferences prefs = await SharedPreferences.getInstance();
-  return 'http://' + prefs.getString("IP-address") + ':8080/vpns/' + path;
+  String baseIp = prefs.getString("IP-address");
+  if (baseIp == null || baseIp.length == 0) {
+    throw Exception('No IP-address defined\nplease go to config menu');
+  }
+  return 'http://' + baseIp + ':8080/vpns/' + path;
 }
 
 Future<http.Response> apiGet(String path) async {
@@ -21,6 +25,7 @@ Future<http.Response> apiGet(String path) async {
 
 Future<http.Response> apiPost(String path) async {
   String url = await apiUrl(path);
+  url = "http:" + url;
   print("posting: $url");
   return await http.post(url);
 }

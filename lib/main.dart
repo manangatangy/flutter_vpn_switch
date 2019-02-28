@@ -226,7 +226,7 @@ class VpnPage extends StatelessWidget {
           child: BorderedButton(
             label: 'Stop',
             onTap: () {
-              vpnBloc.stop();
+              vpnBloc.stop(context);
             },
           ),
         ),
@@ -248,55 +248,48 @@ class VpnPage extends StatelessWidget {
           child: StatusPanel(),
         ),
 
-        // A loading dialog could also be implemented as
-        // new Opacity(
-        //            opacity: 0.3,
-        //            child: const ModalBarrier(dismissible: false, color: Colors.grey),
-        //          )
         StreamBuilder<Indicator>(
           stream: vpnBloc.loadingIndicator,
           initialData: Indicator(isActive: false),
           builder: (context, snapshot) =>
           (!snapshot.data.isActive) ?
-          Container() :
-          Positioned.fill(
-            child: BackdropFilter(
-              filter: ImageFilter.blur(
-                sigmaX: 3.0,
-                sigmaY: 3.0,
-              ),
-              child: Container(
-                color: Colors.black.withOpacity(0),
-                child: Center(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Container(
-                        width: 200.0,
-                          height: 200.0,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 16,
-                          ),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.all(32.0),
-                        child: new Text(
-                          snapshot.data.text,
-                          style: TextStyle(
-                            fontSize: 24,
-                            color: Colors.yellow,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ),
+          Container() : LoadingIndicator(text: snapshot.data.text,),
+        ),
+        /// Use the errorIndicator stream to signal when error occurs.
+        /// Note that the StreamBuilder.builder property must never return null.
+        StreamBuilder<Indicator>(
+          stream: vpnBloc.errorIndicator,
+          initialData: Indicator(isActive: false),
+          builder: (context, snapshot) {
+            if (snapshot.data.isActive) {
+               Future.delayed(Duration.zero, () => showAlert(context, snapshot.data.text));
+            }
+            return Container(width: 0.0, height: 0.0);
+          },
         ),
       ],
     );
+  }
+
+  void showAlert(BuildContext context, message) async {
+    /// showDialog's Future will complete once the dialog closes
+    await showDialog(
+        context: context,
+        builder: (context) =>
+            AlertDialog(
+              title: new Text("Error"),
+              content: Text(message),
+              actions: <Widget>[
+                new FlatButton(
+                  child: new Text("Close"),
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                  },
+                ),
+              ],
+            ),
+    );
+    VpnBlocProvider.of(context).clearError();
   }
 }
 
@@ -320,6 +313,49 @@ class StatusPanel extends StatelessWidget {
               StatusIndicator(label: 'SQUID', status: snapshot.data.squidStatus),
               StatusIndicator(label: 'PING', status: snapshot.data.pingStatus),
             ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class LoadingIndicator extends StatelessWidget {
+  final String text;
+  LoadingIndicator({this.text});
+  @override
+  Widget build(BuildContext context) {
+    return Positioned.fill(
+      child: BackdropFilter(
+        filter: ImageFilter.blur(
+          sigmaX: 3.0,
+          sigmaY: 3.0,
+        ),
+        child: Container(
+          color: Colors.black.withOpacity(0),
+          child: Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 200.0,
+                  height: 200.0,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 16,
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.all(32.0),
+                  child: new Text(
+                    text,
+                    style: TextStyle(
+                      fontSize: 24,
+                      color: Colors.yellow,
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
