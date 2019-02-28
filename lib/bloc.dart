@@ -73,12 +73,13 @@ class LocationData {
 //  }
 }
 
-class VpnLoadingIndicator {
-  final bool isLoading;
-  final String label;
-  VpnLoadingIndicator({
-    this.isLoading,
-    this.label,
+/// Class used to indicate a thing!
+class Indicator {
+  final bool isActive;
+  final String text;
+  Indicator({
+    this.isActive,
+    this.text,
   });
 }
 
@@ -95,29 +96,40 @@ class VpnBloc {
   final BehaviorSubject<StatusData>_statusDataSubject = BehaviorSubject<StatusData>();
   final BehaviorSubject<LocationData>_actualLocationDataSubject = BehaviorSubject<LocationData>();
   final BehaviorSubject<LocationData>_pendingLocationDataSubject = BehaviorSubject<LocationData>();
-  final BehaviorSubject<VpnLoadingIndicator>_loadingIndicatorSubject = BehaviorSubject<VpnLoadingIndicator>();
+  final BehaviorSubject<Indicator>_loadingIndicatorSubject = BehaviorSubject<Indicator>();
+  final BehaviorSubject<Indicator>_errorIndicatorSubject = BehaviorSubject<Indicator>();
 
+  /// There are several streams that clients may receive events from.  The StatusData is a Status
+  /// field for vpn, squid and ping (each of which may be loading, ok, nbg, or unknown).  There
+  /// is also a LocationData for the actual/current location and the pending location. Pending is
+  /// the location that will be loaded the next time the vpn is started. The loadingIndicator
+  /// is simply a signal to show/hide the loading spinner.  The last Stream; errorIndicator is
+  /// used to signal that a network error has occurred.
   Stream<StatusData> get statusDataStream => _statusDataSubject.stream;
   Stream<LocationData> get actualLocationDataStream => _actualLocationDataSubject.stream;
   Stream<LocationData> get pendingLocationDataStream => _pendingLocationDataSubject.stream;
-  Stream<VpnLoadingIndicator> get loadingIndicator => _loadingIndicatorSubject.stream;
+  Stream<Indicator> get loadingIndicator => _loadingIndicatorSubject.stream;
+  Stream<Indicator> get errorIndicator => _errorIndicatorSubject.stream;
 
-  void _showLoadingSpinner(String label) {
-    _loadingIndicatorSubject.add(VpnLoadingIndicator(
-      isLoading: true,
-      label: label,
+  void _setIndicator(BehaviorSubject<Indicator> indicatorSubject, String text) {
+    indicatorSubject.add(Indicator(
+      isActive: true,
+      text: text,
     ));
   }
 
-  void _hideLoadingSpinner() {
-    _loadingIndicatorSubject.add(VpnLoadingIndicator(isLoading: false));
+  void _clearIndicator(BehaviorSubject<Indicator> indicatorSubject) {
+    indicatorSubject.add(Indicator(
+      isActive: false,
+    ));
   }
-
+  
   void dispose() {
     _statusDataSubject.close();
     _actualLocationDataSubject.close();
     _pendingLocationDataSubject.close();
     _loadingIndicatorSubject.close();
+    _errorIndicatorSubject.close();
   }
 
   /// This is the location which is used as the iteration point for the left/right arrows.
@@ -185,11 +197,11 @@ class VpnBloc {
   }
 
   Future<List<String>> getLocationList() {
-    _showLoadingSpinner('Fetching locations');
+    _setIndicator(_loadingIndicatorSubject, 'Fetching locations');
     return getLocations().then((getLocationsResponse) {
       return getLocationsResponse.locations;
     }).catchError((e) => displayError(e)
-    ).whenComplete(() => _hideLoadingSpinner());
+    ).whenComplete(() => _clearIndicator(_loadingIndicatorSubject));
   }
 
   Future<LatLng> getLatLng(String name) {
@@ -197,12 +209,12 @@ class VpnBloc {
   }
 
   void refresh() {
-    _showLoadingSpinner('Refreshing');
+    _setIndicator(_loadingIndicatorSubject, 'Refreshing');
     _fetchStatus()
         .then((_) => _fetchPending())
         .then((_) => _fetchPing())
         .catchError((e) => displayError(e))
-        .whenComplete(() => _hideLoadingSpinner()
+        .whenComplete(() => _clearIndicator(_loadingIndicatorSubject)
     );
   }
 
@@ -221,24 +233,24 @@ class VpnBloc {
   }
 
   void start() {
-    _showLoadingSpinner('Starting');
+    _setIndicator(_loadingIndicatorSubject, 'Starting');
     postAction(VpnAction.Start)
         .then((_) => _fetchStatus())
         .then((_) => _fetchPending())
         .then((_) => _fetchPing())
         .catchError((e) => displayError(e))
-        .whenComplete(() => _hideLoadingSpinner()
+        .whenComplete(() => _clearIndicator(_loadingIndicatorSubject)
     );
   }
 
   void stop() {
-    _showLoadingSpinner('Stopping');
+    _setIndicator(_loadingIndicatorSubject, 'Stopping');
     postAction(VpnAction.Stop)
         .then((_) => _fetchStatus())
         .then((_) => _fetchPending())
         .then((_) => _fetchPing())
         .catchError((e) => displayError(e))
-        .whenComplete(() => _hideLoadingSpinner()
+        .whenComplete(() => _clearIndicator(_loadingIndicatorSubject)
     );
   }
 }

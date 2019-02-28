@@ -52,7 +52,7 @@ class LocationStore {
     var prefs = await SharedPreferences.getInstance();
     var names = prefs.getStringList(_locationNamesKey);
     if (names != null) {
-      for(var name in names) {
+      for (var name in names) {
         var list = prefs.getStringList(name);
         if (list != null && list.length == 2) {
           var lat = double.parse(list[0]);

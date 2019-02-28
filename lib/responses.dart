@@ -2,13 +2,31 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 
-final homeBaseUrl = 'http://192.168.0.10:8080/vpns/';    // at home
-final workBaseUrl = 'http://10.57.129.172:8080/vpns/';    // at work
-final baseUrl = homeBaseUrl;
+//final homeBaseUrl = 'http://192.168.0.10:8080/vpns/';    // at home
+//final workBaseUrl = 'http://10.57.129.172:8080/vpns/';    // at work
+//final baseUrl = workBaseUrl;
+
+Future<String> apiUrl(String path) async {
+  SharedPreferences prefs = await SharedPreferences.getInstance();
+  return 'http://' + prefs.getString("IP-address") + ':8080/vpns/' + path;
+}
+
+Future<http.Response> apiGet(String path) async {
+  String url = await apiUrl(path);
+  print("getting: $url");
+  return await http.get(url);
+}
+
+Future<http.Response> apiPost(String path) async {
+  String url = await apiUrl(path);
+  print("posting: $url");
+  return await http.post(url);
+}
 
 Future<GetLocationsResponse> getLocations() async {
-  final response = await http.get(baseUrl + 'locations');
+  final response = await apiGet('locations');
 
   if (response.statusCode != 200) {
     throw Exception('Failed to getLocations');
@@ -35,7 +53,7 @@ class GetLocationsResponse {
 }
 
 Future<GetStatusResponse> getStatus() async {
-  final response = await http.get(baseUrl + 'status');
+  final response = await apiGet('status');
 
   if (response.statusCode != 200) {
     throw Exception('Failed to getStatus');
@@ -62,7 +80,7 @@ class GetStatusResponse {
 }
 
 Future<GetPingResponse> getPing() async {
-  final response = await http.get(baseUrl + 'ping/www.google.com');
+  final response = await apiGet('ping/www.google.com');
 
   if (response.statusCode != 200) {
     throw Exception('Failed to getPing');
@@ -85,7 +103,7 @@ class GetPingResponse {
 }
 
 Future<GetPendingResponse> getPending() async {
-  final response = await http.get(baseUrl + 'current');
+  final response = await apiGet('current');
 
   if (response.statusCode != 200) {
     throw Exception('Failed to getPending');
@@ -108,7 +126,7 @@ class GetPendingResponse {
 }
 
 Future<PostSwitchPendingResponse> postSwitchPending(String pendingLocation) async {
-  final response = await http.post(baseUrl + 'switch/' + pendingLocation);
+  final response = await apiPost('switch/' + pendingLocation);
 
   if (response.statusCode != 200) {
     throw Exception('Failed to postSwitchPending');
@@ -139,7 +157,7 @@ enum VpnAction {
 
 Future<PostStartStopResponse> postAction(VpnAction action) async {
   String text = (action == VpnAction.Start) ? 'start' : 'stop';
-  final response = await http.post(baseUrl + text);
+  final response = await apiPost(text);
 
   if (response.statusCode != 200) {
     throw Exception('Failed to postAction');

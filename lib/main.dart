@@ -5,7 +5,7 @@ import 'package:flutter_vpn_switch/bloc.dart';
 import 'package:flutter_vpn_switch/crashy.dart';
 import 'package:flutter_vpn_switch/map.dart';
 import 'package:flutter_vpn_switch/responses.dart';
-
+import 'package:shared_preferences/shared_preferences.dart';
 
 Future<String> returnAsFuture(String label, String value, bool ok) {
   String returnString = ok ? 'value-from-$label' : 'error-from-$label';
@@ -76,22 +76,7 @@ class HomePage extends StatelessWidget {
   Widget build(BuildContext context) {
     final vpnBloc = VpnBlocProvider.of(context);
     return Scaffold(
-        drawer: new Drawer(
-          child: new ListView(
-            children: <Widget>[
-              new ListTile(
-                title: new Text("WELCOME"),
-              ),
-              new Divider(),
-              new ListTile(
-                  title: new Text("Clear"),
-                  trailing: new Icon(Icons.settings),
-                  onTap: () {
-                    vpnBloc.locationStore.clear();
-                  }),
-            ],
-          ),
-        ),
+        drawer: DrawerMenu(),
         body: new Stack(
           children: <Widget>[
             VpnPage(),
@@ -130,6 +115,89 @@ class HomePage extends StatelessWidget {
     );
   }
 }
+
+class DrawerMenu extends StatefulWidget {
+
+  DrawerMenu();
+
+  @override
+  _DrawerMenuState createState() => _DrawerMenuState();
+}
+
+class _DrawerMenuState extends State<DrawerMenu> {
+  final controller = new TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    // There are two ways to fetch the shared pref;
+    // 1. Use the future API, (shown in TextField.onSubmitted code below) or
+    // 2. Use await (this requires marking the function as async)
+    // The await can't be applied to initState directly as it causes this runtime error:
+    // The following assertion was thrown building _FocusScopeMarker:
+    //I/flutter (12275): _DrawerMenuState.initState() returned a Future.
+    //I/flutter (12275): State.initState() must be a void method without an `async` keyword.
+    //I/flutter (12275): Rather than awaiting on asynchronous work directly inside of initState,
+    //I/flutter (12275): call a separate method to do this work without awaiting it.
+    loadSharedPref();
+  }
+
+  void loadSharedPref() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    controller.text = prefs.getString("IP-address");
+  }
+
+  @override
+  void dispose() {
+    controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final vpnBloc = VpnBlocProvider.of(context);
+    return new Drawer(
+      child: new ListView(
+        children: <Widget>[
+          new ListTile(
+            title: new Text("VPN Controller"),
+          ),
+          new Divider(),
+          // ref: https://medium.com/flutter-community/a-deep-dive-into-flutter-textfields-f0e676aaab7a
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: TextField(
+              controller: controller,
+              onSubmitted: (String ipAddress) {
+                SharedPreferences.getInstance().then((SharedPreferences prefs) {
+                  prefs.setString("IP-address", ipAddress);
+                });
+              },
+              decoration: InputDecoration(
+                labelText: "VPNswitch IP address",
+              ),
+            ),
+          ),
+          new Divider(),
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: FlatButton(
+              color: Colors.lightBlue,
+              onPressed: () {
+                SharedPreferences.getInstance().then((SharedPreferences prefs) {
+                  prefs.remove("IP-address");
+                });
+                vpnBloc.locationStore.clear();
+              },
+              child: Text("Clear Location Cache"),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 
 class VpnPage extends StatelessWidget {
 
@@ -185,11 +253,11 @@ class VpnPage extends StatelessWidget {
         //            opacity: 0.3,
         //            child: const ModalBarrier(dismissible: false, color: Colors.grey),
         //          )
-        StreamBuilder<VpnLoadingIndicator>(
+        StreamBuilder<Indicator>(
           stream: vpnBloc.loadingIndicator,
-          initialData: VpnLoadingIndicator(isLoading: false),
+          initialData: Indicator(isActive: false),
           builder: (context, snapshot) =>
-          (!snapshot.data.isLoading) ?
+          (!snapshot.data.isActive) ?
           Container() :
           Positioned.fill(
             child: BackdropFilter(
@@ -213,7 +281,7 @@ class VpnPage extends StatelessWidget {
                       Padding(
                         padding: const EdgeInsets.all(32.0),
                         child: new Text(
-                          snapshot.data.label,
+                          snapshot.data.text,
                           style: TextStyle(
                             fontSize: 24,
                             color: Colors.yellow,
@@ -393,7 +461,7 @@ mapController.animateCamera(
 
 // and possibly https://stackoverflow.com/a/47075568/1402287
 // (How work with progress indicator in flutter)
-//and possible https://stackoverflow.com/questions/43550853/how-do-i-do-the-frosted-glass-effect-in-flutter
+// and possible https://stackoverflow.com/questions/43550853/how-do-i-do-the-frosted-glass-effect-in-flutter
 // (How do I do the “frosted glass” effect in Flutter?)
 // which show https://gist.github.com/collinjackson/321ee23b25e409d8747b623c97afa1d5
 // This https://medium.com/flutter-community/exploring-google-maps-in-flutter-8a86d3783d24
