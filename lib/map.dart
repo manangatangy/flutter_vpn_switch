@@ -126,6 +126,7 @@ class _VpnMapState extends State<VpnMap> {
 //  var locationMap = Map<String, LatLng>();
   // Need a list that we can step through.
   var locationList = List<String>();
+  List<Marker> markers = <Marker>[];
 
   mapCreated(GoogleMapController controller) async {
     mapController = controller;
@@ -137,19 +138,20 @@ class _VpnMapState extends State<VpnMap> {
         var latLng = await vpnBloc.getLatLng(name);
         if (latLng != null) {
           locationList.add(name);
-          mapController.addMarker(
-            MarkerOptions(
-              position: latLng,
-              infoWindowText: InfoWindowText(name, null),
-//            icon: BitmapDescriptor.fromAsset('images/flutter.png',),
-            ),
+          markers.add(
+            Marker(
+                markerId: MarkerId(name),
+                position: latLng,
+                infoWindow: InfoWindow(title: name),
+                onTap: () {
+                  final vpnBloc = VpnBlocProvider.of(context);
+                  vpnBloc.switchLocation(name);
+                }
+            )
           );
         }
       }
-      mapController.onMarkerTapped.add((Marker marker) {
-        final vpnBloc = VpnBlocProvider.of(context);
-        vpnBloc.switchLocation(marker.options.infoWindowText.title);
-      });
+
     }
   }
 
@@ -204,14 +206,14 @@ class _VpnMapState extends State<VpnMap> {
     return Stack(
       children: <Widget>[
         GoogleMap(
-          onMapCreated: (GoogleMapController controller) => mapCreated(controller),
-          options: GoogleMapOptions(
-            mapType: MapType.satellite,
-//            cameraPosition: CameraPosition(
-//              target: LatLng(37.4219999, -122.0862462),
-//            ),
+          initialCameraPosition: CameraPosition(
+            target: LatLng(37.4219999, -122.0862462),
           ),
+          mapType: MapType.satellite,
+          onMapCreated: (GoogleMapController controller) => mapCreated(controller),
+          markers: Set<Marker>.of(markers),
         ),
+
         Positioned(
           top: 24.0 + 60.0,
           left: 0.0,
